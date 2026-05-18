@@ -35,6 +35,39 @@
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .hint { font-size:12px; color:#888; margin-top:3px; }
   
+  /* 커스텀 자동완성 */
+  .ac-wrap { position: relative; }
+  .ac-wrap input { width: 100%; }
+  .ac-list {
+    display: none;
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    background: #fff;
+    border: 2px solid #1a73e8;
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    margin-top: 2px;
+  }
+  .ac-list.show { display: block; }
+  .ac-item {
+    padding: 11px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    font-size: 15px;
+  }
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:active, .ac-item.hover { background: #E3F2FD; }
+  .ac-hint {
+    padding: 10px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+    background: #FAFAFA;
+  }
+  
   /* 계산기 모달 */
   .calc-modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#263238; z-index:9999; flex-direction:column; }
   .calc-modal.active { display:flex; }
@@ -45,7 +78,7 @@
   .calc-display { background:#000; color:#0F0; padding:14px; margin:0 8px 8px; border-radius:8px; font-family:'Courier New',monospace; font-size:32px; text-align:right; font-weight:bold; min-height:60px; }
   .calc-keypad { padding:0 8px 8px; }
   .calc-row { display:flex; gap:6px; margin-bottom:6px; }
-  .calc-btn { flex:1; padding:18px 0; font-size:22px; font-weight:bold; border:none; border-radius:8px; cursor:pointer; color:#fff; }
+  .calc-btn { flex:1; padding:18px 0; font-size:22px; font-weight:bold; border:none; border-radius:8px; cursor:pointer; color:#fff; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
   .ck-num { background:#455A64; }
   .ck-num:active { background:#37474F; }
   .ck-op { background:#FF9800; }
@@ -77,8 +110,10 @@
 
   <div class="box">
     <label class="block">입고처 *</label>
-    <input type="text" id="in_vendor" list="dl_vendors" placeholder="예: 아슬란미트">
-    <datalist id="dl_vendors"></datalist>
+    <div class="ac-wrap">
+      <input type="text" id="in_vendor" placeholder="2글자 이상 입력 시 검색" autocomplete="off" data-ac="vendors">
+      <div class="ac-list" id="ac_vendors"></div>
+    </div>
     
     <label class="block">보관상태 *</label>
     <div class="radio-group">
@@ -88,24 +123,34 @@
     </div>
     
     <label class="block">상품명 *</label>
-    <input type="text" id="in_product" list="dl_products" placeholder="예: 목전지">
-    <datalist id="dl_products"></datalist>
+    <div class="ac-wrap">
+      <input type="text" id="in_product" placeholder="2글자 이상 입력 시 검색" autocomplete="off" data-ac="products">
+      <div class="ac-list" id="ac_products"></div>
+    </div>
     
     <label class="block">브랜드 / 등급</label>
     <div class="grid2">
-      <input type="text" id="in_brand" list="dl_brands" placeholder="브랜드">
-      <input type="text" id="in_grade" list="dl_grades" placeholder="등급">
+      <div class="ac-wrap">
+        <input type="text" id="in_brand" placeholder="브랜드" autocomplete="off" data-ac="brands">
+        <div class="ac-list" id="ac_brands"></div>
+      </div>
+      <div class="ac-wrap">
+        <input type="text" id="in_grade" placeholder="등급" autocomplete="off" data-ac="grades">
+        <div class="ac-list" id="ac_grades"></div>
+      </div>
     </div>
-    <datalist id="dl_brands"></datalist>
-    <datalist id="dl_grades"></datalist>
     
     <label class="block">공장번호 / 원산지</label>
     <div class="grid2">
-      <input type="text" id="in_factory" list="dl_factories" placeholder="공장번호">
-      <input type="text" id="in_origin" list="dl_origins" placeholder="원산지">
+      <div class="ac-wrap">
+        <input type="text" id="in_factory" placeholder="공장번호" autocomplete="off" data-ac="factories">
+        <div class="ac-list" id="ac_factories"></div>
+      </div>
+      <div class="ac-wrap">
+        <input type="text" id="in_origin" placeholder="원산지" autocomplete="off" data-ac="origins">
+        <div class="ac-list" id="ac_origins"></div>
+      </div>
     </div>
-    <datalist id="dl_factories"></datalist>
-    <datalist id="dl_origins"></datalist>
     
     <label class="block">제조일</label>
     <input type="text" id="in_mfg" placeholder="예: 20251005 (숫자 8자리)" inputmode="numeric" maxlength="8">
@@ -149,7 +194,7 @@
     <div class="calc-row">
       <button class="calc-btn ck-clear" onclick="calcClear()">C</button>
       <button class="calc-btn ck-fn" onclick="calcBackspace()">⌫</button>
-      <button class="calc-btn ck-fn" id="calcDotBtn" onclick="calcToggleDecimal()" ontouchstart="calcDotLongStart(event)" ontouchend="calcDotLongEnd()">00.00</button>
+      <button class="calc-btn ck-fn" id="calcDotBtn">00.00</button>
       <button class="calc-btn ck-op" onclick="calcMultiply()">×</button>
     </div>
     <div class="calc-row">
@@ -263,28 +308,93 @@
       showStatus2("❌ 통신 오류: " + err.message, 'error');
     }
   }
-  // 자동완성
+
+  // ============ 자동완성 (2글자 이상 입력 시) ============
+  let acData = { vendors:[], products:[], brands:[], grades:[], factories:[], origins:[] };
+  const MIN_CHARS = 3; // ★ 최소 입력 글자 수
+  
   async function loadAutoComplete(){
     try {
       const res = await fetch(API_URL + "?action=getAutoComplete");
       const data = await res.json();
-      const fill = (id, arr) => {
-        const dl = document.getElementById(id);
-        dl.innerHTML = '';
-        (arr || []).forEach(v => { const opt=document.createElement('option'); opt.value=v; dl.appendChild(opt); });
-      };
-      fill('dl_vendors', data.vendors); fill('dl_products', data.products);
-      fill('dl_brands', data.brands); fill('dl_grades', data.grades);
-      fill('dl_factories', data.factories); fill('dl_origins', data.origins);
+      acData.vendors = data.vendors || [];
+      acData.products = data.products || [];
+      acData.brands = data.brands || [];
+      acData.grades = data.grades || [];
+      acData.factories = data.factories || [];
+      acData.origins = data.origins || [];
+      setupAutocomplete();
     } catch(err){ console.log("자동완성 로드 실패:", err); }
   }
+  
+  function setupAutocomplete(){
+    document.querySelectorAll('input[data-ac]').forEach(input => {
+      const key = input.dataset.ac;
+      const listId = 'ac_' + key;
+      const list = document.getElementById(listId);
+      if (!list) return;
+      
+      function renderList(query){
+        const q = (query || '').trim();
+        
+        // ★ 2글자 미만이면 드롭다운 안 띄움
+        if (q.length < MIN_CHARS) {
+          list.classList.remove('show');
+          return;
+        }
+        
+        const qLower = q.toLowerCase();
+        const items = acData[key] || [];
+        const filtered = items
+          .filter(v => v.toLowerCase().includes(qLower))
+          .slice(0, 10); // 최대 10개
+        
+        list.innerHTML = '';
+        
+        if (filtered.length === 0) {
+          // 검색 결과 없음 표시 (잠깐만)
+          const hint = document.createElement('div');
+          hint.className = 'ac-hint';
+          hint.textContent = '일치하는 항목 없음 (직접 입력하세요)';
+          list.appendChild(hint);
+          list.classList.add('show');
+          return;
+        }
+        
+        filtered.forEach(v => {
+          const div = document.createElement('div');
+          div.className = 'ac-item';
+          // 검색어 하이라이트
+          const idx = v.toLowerCase().indexOf(qLower);
+          if (idx >= 0) {
+            div.innerHTML = v.slice(0,idx) + '<b style="color:#1a73e8;">' + v.slice(idx, idx+q.length) + '</b>' + v.slice(idx+q.length);
+          } else {
+            div.textContent = v;
+          }
+          div.addEventListener('pointerdown', (e)=>{
+            e.preventDefault();
+            input.value = v;
+            list.classList.remove('show');
+          });
+          list.appendChild(div);
+        });
+        list.classList.add('show');
+      }
+      
+      input.addEventListener('focus', ()=> renderList(input.value));
+      input.addEventListener('input', ()=> renderList(input.value));
+      input.addEventListener('blur', ()=> {
+        setTimeout(()=> list.classList.remove('show'), 200);
+      });
+    });
+  }
+  
   loadAutoComplete();
 
   // ============ 계산기 ============
   let calcInput = "", calcTotalSum = 0, calcItemCount = 0;
   let calcDetailList = [], calcPaperLog = "";
   let calcBaseForMultiply = null, calcIsAutoDecimal = false;
-  let calcDotLongTimer = null, calcDotIsLong = false;
 
   function openCalculator(){ document.getElementById('calcModal').classList.add('active'); calcUpdateDisplay(); calcRenderPaper(); }
   function closeCalculator(){ document.getElementById('calcModal').classList.remove('active'); }
@@ -348,7 +458,6 @@
     calcUpdateDisplay();
   }
   function calcToggleDecimal(){
-    if (calcDotIsLong) { calcDotIsLong = false; return; }
     vibrate(20);
     calcIsAutoDecimal = !calcIsAutoDecimal;
     const btn = document.getElementById('calcDotBtn');
@@ -360,17 +469,36 @@
     } else { btn.classList.remove('active-decimal'); }
     calcUpdateDisplay();
   }
-  function calcDotLongStart(e){
-    e.preventDefault();
-    calcDotLongTimer = setTimeout(()=>{
-      calcDotIsLong = true; vibrate(50);
-      if (!calcIsAutoDecimal && !calcInput.includes(".")) {
-        calcInput += calcInput ? "." : "0.";
-        calcUpdateDisplay();
-      }
-    }, 500);
+  function calcInsertDot(){
+    vibrate(50);
+    if (!calcIsAutoDecimal && !calcInput.includes(".")) {
+      calcInput += calcInput ? "." : "0.";
+      calcUpdateDisplay();
+    }
   }
-  function calcDotLongEnd(){ if (calcDotLongTimer) clearTimeout(calcDotLongTimer); }
+  // 00.00 버튼: 짧게=토글, 길게=점 입력
+  (function setupDotBtn(){
+    const btn = document.getElementById('calcDotBtn');
+    if (!btn) return;
+    let longPressTimer = null;
+    let isLongPress = false;
+    btn.addEventListener('pointerdown', (e)=>{
+      e.preventDefault();
+      isLongPress = false;
+      longPressTimer = setTimeout(()=>{
+        isLongPress = true;
+        calcInsertDot();
+      }, 600);
+    });
+    btn.addEventListener('pointerup', (e)=>{
+      e.preventDefault();
+      if (longPressTimer) clearTimeout(longPressTimer);
+      if (!isLongPress) calcToggleDecimal();
+    });
+    btn.addEventListener('pointercancel', ()=>{
+      if (longPressTimer) clearTimeout(longPressTimer);
+    });
+  })();
   function calcMultiply(){
     vibrate(20);
     if (calcInput && calcInput !== ".") { calcBaseForMultiply = Number(calcInput); calcInput = ""; calcUpdateDisplay(); }
