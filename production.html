@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>생산 등록</title>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family:'Malgun Gothic',sans-serif; margin:0; padding:0; background:#f0f2f5; }
+  .header { background:#9C27B0; color:#fff; padding:14px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:50; }
+  .header .back { background:rgba(255,255,255,0.2); border:none; color:#fff; font-size:18px; padding:6px 12px; border-radius:6px; cursor:pointer; }
+  .header .title { font-size:18px; font-weight:bold; flex:1; text-align:center; }
+  .container { max-width:520px; margin:0 auto; padding:14px; }
+  .box { background:#fff; padding:14px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.08); margin-bottom:12px; }
+  .row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .row label { font-weight:bold; min-width:55px; font-size:14px; }
+  label.block { display:block; font-weight:bold; font-size:14px; margin:10px 0 4px; color:#333; }
+  input[type="text"], input[type="number"], input[type="date"] { width:100%; padding:11px; font-size:16px; border:2px solid #ccc; border-radius:8px; }
+  textarea { width:100%; padding:11px; font-size:14px; border:2px solid #ccc; border-radius:8px; min-height:60px; }
+  .btn { color:#fff; border:none; padding:13px; width:100%; font-size:16px; font-weight:bold; border-radius:8px; margin-top:8px; cursor:pointer; }
+  .btn-camera { background:#4CAF50; }
+  .btn-stop { background:#E53935; display:none; }
+  .btn-save { background:#2196F3; padding:16px; font-size:18px; }
+  .btn-small { padding:10px; font-size:14px; width:auto; flex-shrink:0; }
+  .btn-calc { background:#4CAF50; padding:16px; font-size:17px; }
+  .btn-add { background:#9C27B0; padding:18px; font-size:18px; }
+  .btn-edit { background:#1a73e8; padding:8px 14px; font-size:13px; width:auto; }
+  .btn-delete { background:#E53935; padding:8px 14px; font-size:13px; width:auto; }
+  #status2 { margin-top:10px; padding:12px; border-radius:8px; font-weight:bold; text-align:center; font-size:15px; white-space:pre-line; display:none; }
+  .success { background:#E8F5E9; color:#2E7D32; }
+  .error { background:#FFEBEE; color:#C62828; }
+  .processing { background:#FFF3E0; color:#E65100; }
+  .radio-group { display:flex; gap:8px; }
+  .radio-group label { flex:1; padding:11px; text-align:center; border:2px solid #ccc; border-radius:8px; cursor:pointer; font-weight:bold; }
+  .radio-group input[type="radio"] { display:none; }
+  .radio-group label:has(input:checked) { background:#9C27B0; border-color:#9C27B0; color:#fff; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .hint { font-size:12px; color:#888; margin-top:3px; }
+  
+  .ac-wrap { position:relative; }
+  .ac-list { display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:2px solid #9C27B0; border-radius:8px; max-height:240px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.15); margin-top:2px; }
+  .ac-list.show { display:block; }
+  .ac-item { padding:11px 12px; cursor:pointer; border-bottom:1px solid #eee; font-size:15px; }
+  .ac-item:last-child { border-bottom:none; }
+  .ac-item:active { background:#F3E5F5; }
+  .ac-hint { padding:10px; text-align:center; color:#999; font-size:13px; background:#FAFAFA; }
+  
+  .list-item { background:#fff; border:1px solid #e0e0e0; border-left:4px solid #9C27B0; border-radius:8px; padding:12px; margin-bottom:8px; }
+  .list-item .li-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .list-item .li-title { font-size:15px; font-weight:bold; color:#333; flex:1; }
+  .list-item .li-meta { font-size:13px; color:#666; margin-top:4px; }
+  .list-item .li-num { display:inline-block; background:#9C27B0; color:#fff; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold; margin-right:6px; }
+  .list-item .li-tag { display:inline-block; background:#E1BEE7; color:#4A148C; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:bold; margin-right:4px; }
+  .list-item .li-tag.morning { background:#FFE0B2; color:#E65100; }
+  .list-item .li-tag.afternoon { background:#C8E6C9; color:#1B5E20; }
+  .list-item .li-yield { font-weight:bold; color:#2E7D32; }
+  .list-item .li-yield.low { color:#E53935; }
+  .list-item .li-actions { display:flex; gap:6px; margin-top:8px; }
+  .empty-msg { text-align:center; color:#999; padding:20px; font-size:14px; }
+  
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; overflow-y:auto; padding:14px; }
+  .modal-overlay.active { display:block; }
+  .modal-content { background:#f0f2f5; max-width:520px; margin:0 auto; border-radius:12px; padding:14px; }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .modal-header .title { font-size:18px; font-weight:bold; color:#333; }
+  .modal-close { background:#E53935; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:bold; }
+  
+  #reader2 { width:100%; border-radius:10px; overflow:hidden; background:#000; display:none; margin-top:8px; }
+  #reader2 video { width:100% !important; height:200px !important; object-fit:cover !important; }
+  
+  .calc-modal { display:none; position:fixed; inset:0; background:#263238; z-index:9999; flex-direction:column; }
+  .calc-modal.active { display:flex; }
+  .calc-header { background:#9C27B0; color:#fff; padding:12px; display:flex; justify-content:space-between; align-items:center; }
+  .calc-header .title { font-weight:bold; font-size:16px; }
+  .calc-close { background:#E53935; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-weight:bold; cursor:pointer; }
+  .calc-target { background:#FFF3E0; color:#E65100; padding:8px; margin:0 8px 4px; border-radius:6px; text-align:center; font-size:13px; font-weight:bold; }
+  .calc-paper { flex:1; background:#fff; margin:8px; border-radius:8px; padding:8px; overflow-y:auto; font-family:'Courier New',monospace; font-size:14px; color:#333; white-space:pre-wrap; line-height:1.5; min-height:120px; max-height:25vh; }
+  .calc-display { background:#000; color:#0F0; padding:14px; margin:0 8px 8px; border-radius:8px; font-family:'Courier New',monospace; font-size:32px; text-align:right; font-weight:bold; min-height:60px; }
+  .calc-keypad { padding:0 8px 8px; }
+  .calc-row { display:flex; gap:6px; margin-bottom:6px; }
+  .calc-btn { flex:1; padding:18px 0; font-size:22px; font-weight:bold; border:none; border-radius:8px; cursor:pointer; color:#fff; touch-action:manipulation; }
+  .ck-num { background:#455A64; }
+  .ck-op { background:#9C27B0; }
+  .ck-fn { background:#78909C; font-size:18px; }
+  .ck-fn.active-decimal { background:#9C27B0; }
+  .ck-clear { background:#E53935; }
+  .ck-equal { background:#2196F3; }
+  .ck-total { background:#FF9800; }
+  .ck-send { background:#4CAF50; font-size:17px; }
+  .calc-btn:active { transform:scale(0.95); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="back" onclick="location.href='index.html'">← 뒤로</button>
+  <span class="title">🏭 생산 등록</span>
+</div>
+
+<div class="container">
+
+  <div class="box">
+    <label class="block">📅 작업 날짜</label>
+    <input type="date" id="targetDate">
+  </div>
+
+  <button class="btn btn-add" onclick="openAddModal()">➕ 새 생산 등록</button>
+
+  <div class="box" style="margin-top:14px;">
+    <label class="block">📋 선택 날짜의 생산 목록</label>
+    <div id="listArea"><div class="empty-msg">불러오는 중...</div></div>
+  </div>
+
+</div>
+
+<!-- 생산 입력 모달 -->
+<div id="inputModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="title" id="modalTitle">➕ 새 생산 등록</span>
+      <button class="modal-close" onclick="closeModal()">✕ 닫기</button>
+    </div>
+
+    <div class="box">
+      <label class="block">작성자 *</label>
+      <div class="ac-wrap">
+        <input type="text" id="p_writer" placeholder="작성자 이름" autocomplete="off" data-pac="writers">
+        <div class="ac-list" id="pac_writers"></div>
+      </div>
+      
+      <label class="block">기계 선택 *</label>
+      <div class="radio-group">
+        <label><input type="radio" name="machine" value="육절기" checked><span>육절기</span></label>
+        <label><input type="radio" name="machine" value="골절기"><span>골절기</span></label>
+      </div>
+      
+      <label class="block">시간대</label>
+      <div class="radio-group">
+        <label><input type="radio" name="timeSlot" value="오전" checked><span>오전</span></label>
+        <label><input type="radio" name="timeSlot" value="오후"><span>오후</span></label>
+      </div>
+      
+      <hr style="margin:14px 0; border:0; border-top:2px dashed #ddd;">
+      <div style="font-size:15px; font-weight:bold; color:#FF9800; margin-bottom:6px;">📥 투입</div>
+      
+      <label class="block">투입 상품명 *</label>
+      <div class="ac-wrap">
+        <input type="text" id="p_inputProduct" placeholder="3글자 이상 입력 시 검색" autocomplete="off" data-pac="inputProducts">
+        <div class="ac-list" id="pac_inputProducts"></div>
+      </div>
+      
+      <label class="block">이력 식별번호</label>
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="p_barcode" placeholder="바코드 스캔/입력" inputmode="numeric">
+        <button class="btn btn-camera btn-small" onclick="startBarcodeForInput()">📷</button>
+      </div>
+      <div id="reader2"></div>
+      <button id="stopBarcodeBtn" class="btn btn-stop" style="margin-top:6px;" onclick="stopBarcodeForInput()">바코드 스캔 중지</button>
+      
+      <label class="block">투입 박스수 / 투입 중량</label>
+      <button class="btn btn-calc" onclick="openCalculator('input')">🧮 계산기 (투입용)</button>
+      <div class="grid2" style="margin-top:8px;">
+        <input type="number" id="p_inputBoxCount" placeholder="투입 박스 수" step="1">
+        <input type="number" id="p_inputWeight" placeholder="투입 중량(kg)" step="0.01">
+      </div>
+      
+      <hr style="margin:14px 0; border:0; border-top:2px dashed #ddd;">
+      <div style="font-size:15px; font-weight:bold; color:#2E7D32; margin-bottom:6px;">📤 생산</div>
+      
+      <label class="block">생산 상품명</label>
+      <div class="ac-wrap">
+        <input type="text" id="p_outputProduct" placeholder="비워두면 투입과 동일" autocomplete="off" data-pac="outputProducts">
+        <div class="ac-list" id="pac_outputProducts"></div>
+      </div>
+      
+      <label class="block">생산 박스수 / 생산 중량</label>
+      <button class="btn btn-calc" onclick="openCalculator('output')">🧮 계산기 (생산용)</button>
+      <div class="grid2" style="margin-top:8px;">
+        <input type="number" id="p_outputBoxCount" placeholder="생산 박스 수" step="1">
+        <input type="number" id="p_outputWeight" placeholder="생산 중량(kg)" step="0.01">
+      </div>
+      <div id="yieldDisplay" class="hint" style="font-size:14px; font-weight:bold; color:#2E7D32; padding:6px 0;"></div>
+      
+      <label class="block">메모 / 기타</label>
+      <textarea id="p_memo" placeholder="국거리 4묶음, 양프로, 미스다, 작업보류 등"></textarea>
+      
+      <div id="status2"></div>
+      
+      <button class="btn btn-save" onclick="saveInput()" id="saveBtn">💾 저장</button>
+      <button class="btn btn-delete" id="deleteBtn" style="display:none;" onclick="deleteCurrentItem()">🗑️ 이 항목 삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- 계산기 모달 -->
+<div id="calcModal" class="calc-modal">
+  <div class="calc-header">
+    <span class="title">🧮 중량 계산기</span>
+    <button class="calc-close" onclick="closeCalculator()">닫기 ✕</button>
+  </div>
+  <div class="calc-target" id="calcTarget">투입 박스/중량 칸으로 전송됩니다</div>
+  <div class="calc-paper" id="calcPaper"></div>
+  <div class="calc-display" id="calcDisplay">0</div>
+  <div class="calc-keypad">
+    <div class="calc-row">
+      <button class="calc-btn ck-clear" onclick="calcClear()">C</button>
+      <button class="calc-btn ck-fn" onclick="calcBackspace()">⌫</button>
+      <button class="calc-btn ck-fn" id="calcDotBtn">00.00</button>
+      <button class="calc-btn ck-op" onclick="calcMultiply()">×</button>
+    </div>
+    <div class="calc-row">
+      <button class="calc-btn ck-num" onclick="calcNum('7')">7</button>
+      <button class="calc-btn ck-num" onclick="calcNum('8')">8</button>
+      <button class="calc-btn ck-num" onclick="calcNum('9')">9</button>
+      <button class="calc-btn ck-op" onclick="calcMinus()">−</button>
+    </div>
+    <div class="calc-row">
+      <button class="calc-btn ck-num" onclick="calcNum('4')">4</button>
+      <button class="calc-btn ck-num" onclick="calcNum('5')">5</button>
+      <button class="calc-btn ck-num" onclick="calcNum('6')">6</button>
+      <button class="calc-btn ck-op" onclick="calcPlus()">+</button>
+    </div>
+    <div class="calc-row">
+      <button class="calc-btn ck-num" onclick="calcNum('1')">1</button>
+      <button class="calc-btn ck-num" onclick="calcNum('2')">2</button>
+      <button class="calc-btn ck-num" onclick="calcNum('3')">3</button>
+      <button class="calc-btn ck-equal" onclick="calcEqual()">=</button>
+    </div>
+    <div class="calc-row">
+      <button class="calc-btn ck-num" style="flex:2;" onclick="calcNum('0')">0</button>
+      <button class="calc-btn ck-total" onclick="calcTotal()">★</button>
+      <button class="calc-btn ck-send" onclick="calcSendBack()">📤 전송</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ⚠️ 본인 앱스스크립트 URL!
+  const API_URL = "https://script.google.com/macros/s/AKfycbxbhb1tD_9zJslhTS7MInKo0t5F5VfwOJwM0hXFP6CkufQsstmVgFicBOpjV86NXz9i/exec";
+
+  let html5QrCode2 = null;
+  let editingRowNum = null;
+  let calcTargetField = 'input';
+  const savedWorker = localStorage.getItem('shinhwa_worker') || '';
+
+  (function initDate(){
+    const t = new Date();
+    const ymd = t.getFullYear() + "-" + String(t.getMonth()+1).padStart(2,'0') + "-" + String(t.getDate()).padStart(2,'0');
+    document.getElementById('targetDate').value = ymd;
+  })();
+  document.getElementById('targetDate').addEventListener('change', loadList);
+
+  function playBeep(isError){ try { const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.type='sine'; o.frequency.value=isError?300:900; o.start(); g.gain.exponentialRampToValueAtTime(0.00001,ctx.currentTime+0.15); o.stop(ctx.currentTime+0.15); } catch(e){} }
+  function vibrate(ms){ try { if (navigator.vibrate) navigator.vibrate(ms||80); } catch(e){} }
+  function vibratePattern(success){ try { if (navigator.vibrate) navigator.vibrate(success?[80,50,80]:300); } catch(e){} }
+  function showStatus2(msg, type){ const s=document.getElementById('status2'); s.style.display='block'; s.innerText=msg; s.className=type; }
+  function hideStatus2(){ document.getElementById('status2').style.display='none'; }
+  function escapeHtml(s){ if (s==null) return ''; return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function openAddModal(){
+    editingRowNum = null;
+    clearForm();
+    if (savedWorker) document.getElementById('p_writer').value = savedWorker;
+    document.getElementById('modalTitle').innerText = "➕ 새 생산 등록";
+    document.getElementById('deleteBtn').style.display = 'none';
+    document.getElementById('inputModal').classList.add('active');
+    hideStatus2();
+    updateYieldDisplay();
+  }
+  function openEditModal(item){
+    editingRowNum = item.rowNum;
+    clearForm();
+    document.getElementById('p_writer').value = item.writer || '';
+    document.getElementById('p_inputProduct').value = item.inputProduct || '';
+    document.getElementById('p_barcode').value = item.barcode || '';
+    document.getElementById('p_inputBoxCount').value = item.inputBoxCount || '';
+    document.getElementById('p_inputWeight').value = item.inputWeight || '';
+    document.getElementById('p_outputProduct').value = item.outputProduct || '';
+    document.getElementById('p_outputBoxCount').value = item.outputBoxCount || '';
+    document.getElementById('p_outputWeight').value = item.outputWeight || '';
+    document.getElementById('p_memo').value = item.memo || '';
+    const m = item.machine || '육절기';
+    const mradio = document.querySelector('input[name="machine"][value="'+m+'"]');
+    if (mradio) mradio.checked = true;
+    const t = item.timeSlot || '오전';
+    const tradio = document.querySelector('input[name="timeSlot"][value="'+t+'"]');
+    if (tradio) tradio.checked = true;
+    document.getElementById('modalTitle').innerText = "✏️ 생산 수정";
+    document.getElementById('deleteBtn').style.display = 'block';
+    document.getElementById('inputModal').classList.add('active');
+    hideStatus2();
+    updateYieldDisplay();
+  }
+  function closeModal(){
+    document.getElementById('inputModal').classList.remove('active');
+    editingRowNum = null;
+  }
+  function clearForm(){
+    ['p_writer','p_inputProduct','p_barcode','p_inputBoxCount','p_inputWeight','p_outputProduct','p_outputBoxCount','p_outputWeight','p_memo'].forEach(id=>{
+      document.getElementById(id).value = '';
+    });
+    document.querySelector('input[name="machine"][value="육절기"]').checked = true;
+    document.querySelector('input[name="timeSlot"][value="오전"]').checked = true;
+  }
+  
+  function updateYieldDisplay(){
+    const iw = parseFloat(document.getElementById('p_inputWeight').value) || 0;
+    const ow = parseFloat(document.getElementById('p_outputWeight').value) || 0;
+    const display = document.getElementById('yieldDisplay');
+    if (iw > 0 && ow > 0) {
+      const pct = (ow / iw * 100).toFixed(2);
+      display.innerText = `수율: ${pct}%`;
+      display.style.color = pct >= 95 ? '#2E7D32' : (pct >= 85 ? '#FF9800' : '#E53935');
+    } else {
+      display.innerText = '';
+    }
+  }
+  ['p_inputWeight','p_outputWeight'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', updateYieldDisplay);
+  });
+
+  async function loadList(){
+    const date = document.getElementById('targetDate').value;
+    document.getElementById('listArea').innerHTML = '<div class="empty-msg">불러오는 중...</div>';
+    try {
+      const res = await fetch(API_URL + "?action=listByDate&sheet=production&date=" + encodeURIComponent(date));
+      const data = await res.json();
+      renderList(data.items || []);
+    } catch(err) {
+      document.getElementById('listArea').innerHTML = '<div class="empty-msg">목록 로드 실패: ' + err.message + '</div>';
+    }
+  }
+  function renderList(items){
+    const area = document.getElementById('listArea');
+    if (items.length === 0) {
+      area.innerHTML = '<div class="empty-msg">선택한 날짜에 생산 내역이 없습니다.<br>위 "➕ 새 생산 등록" 버튼을 눌러 등록하세요.</div>';
+      return;
+    }
+    area.innerHTML = '';
+    items.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+      const num = idx + 1;
+      const tsClass = item.timeSlot === '오후' ? 'afternoon' : 'morning';
+      const yieldStr = item.yieldPct ? Number(item.yieldPct).toFixed(2) + '%' : '-';
+      const yieldClass = (item.yieldPct && Number(item.yieldPct) < 85) ? 'low' : '';
+      const inLine = `투입: ${item.inputBoxCount||'-'}박스 / ${item.inputWeight?Number(item.inputWeight).toFixed(2)+'kg':'-'}`;
+      const outLine = `생산: ${item.outputBoxCount||'-'}박스 / ${item.outputWeight?Number(item.outputWeight).toFixed(2)+'kg':'-'}`;
+      div.innerHTML = `
+        <div class="li-head">
+          <div class="li-title"><span class="li-num">${num}</span>${escapeHtml(item.inputProduct)}</div>
+        </div>
+        <div class="li-meta">
+          <span class="li-tag">${escapeHtml(item.machine||'-')}</span>
+          <span class="li-tag ${tsClass}">${escapeHtml(item.timeSlot||'-')}</span>
+          ${item.writer?'작성: '+escapeHtml(item.writer):''}
+        </div>
+        <div class="li-meta">${inLine}</div>
+        <div class="li-meta">${outLine}</div>
+        <div class="li-meta">수율: <span class="li-yield ${yieldClass}">${yieldStr}</span></div>
+        ${item.memo ? '<div class="li-meta">📝 ' + escapeHtml(item.memo) + '</div>' : ''}
+        <div class="li-actions">
+          <button class="btn btn-edit" onclick='editItemBtn(${JSON.stringify(item).replace(/'/g,"&#39;")})'>✏️ 수정</button>
+        </div>
+      `;
+      area.appendChild(div);
+    });
+  }
+  function editItemBtn(item){ openEditModal(item); }
+
+  async function saveInput(){
+    const inputProduct = document.getElementById('p_inputProduct').value.trim();
+    if (!inputProduct) { showStatus2("🚨 투입 상품명은 필수입니다.", 'error'); return; }
+    let outputProduct = document.getElementById('p_outputProduct').value.trim();
+    if (!outputProduct) outputProduct = inputProduct;
+    const payload = {
+      targetDate: document.getElementById('targetDate').value,
+      writer: document.getElementById('p_writer').value.trim(),
+      machine: document.querySelector('input[name="machine"]:checked').value,
+      timeSlot: document.querySelector('input[name="timeSlot"]:checked').value,
+      inputProduct: inputProduct,
+      barcode: document.getElementById('p_barcode').value.trim(),
+      inputBoxCount: document.getElementById('p_inputBoxCount').value.trim(),
+      inputWeight: document.getElementById('p_inputWeight').value.trim(),
+      outputProduct: outputProduct,
+      outputBoxCount: document.getElementById('p_outputBoxCount').value.trim(),
+      outputWeight: document.getElementById('p_outputWeight').value.trim(),
+      memo: document.getElementById('p_memo').value.trim()
+    };
+    if (editingRowNum) {
+      payload.action = "updateProduction";
+      payload.rowNum = editingRowNum;
+    } else {
+      payload.action = "production";
+    }
+    showStatus2("⏳ 저장 중...", 'processing');
+    try {
+      const res = await fetch(API_URL, { method:"POST", body:JSON.stringify(payload) });
+      const data = await res.json();
+      if (data.status === 'success') {
+        vibratePattern(true);
+        playBeep(false);
+        showStatus2("✅ " + data.msg, 'success');
+        setTimeout(()=>{ closeModal(); loadList(); loadAutoComplete(); }, 800);
+      } else {
+        vibratePattern(false);
+        playBeep(true);
+        showStatus2("🚨 " + data.msg, 'error');
+      }
+    } catch(err){
+      vibratePattern(false);
+      playBeep(true);
+      showStatus2("❌ 통신 오류: " + err.message, 'error');
+    }
+  }
+  
+  async function deleteCurrentItem(){
+    if (!editingRowNum) return;
+    if (!confirm("이 생산 내역을 삭제하시겠습니까?")) return;
+    showStatus2("⏳ 삭제 중...", 'processing');
+    try {
+      const res = await fetch(API_URL, { method:"POST", body:JSON.stringify({ action:"deleteProduction", rowNum:editingRowNum }) });
+      const data = await res.json();
+      if (data.status === 'success') {
+        playBeep(false);
+        showStatus2("✅ 삭제됨", 'success');
+        setTimeout(()=>{ closeModal(); loadList(); }, 600);
+      } else {
+        playBeep(true);
+        showStatus2("🚨 " + data.msg, 'error');
+      }
+    } catch(err){
+      playBeep(true);
+      showStatus2("❌ 통신 오류: " + err.message, 'error');
+    }
+  }
+
+  function startBarcodeForInput(){
+    document.getElementById('reader2').style.display = 'block';
+    document.getElementById('stopBarcodeBtn').style.display = 'block';
+    if (!html5QrCode2) html5QrCode2 = new Html5Qrcode("reader2");
+    const cameraConstraints = {
+      facingMode: { ideal: "environment" },
+      width: { ideal: 1280 }, height: { ideal: 960 },
+      focusMode: "continuous", advanced: [{ focusMode: "continuous" }]
+    };
+    const scanConfig = {
+      fps: 15, qrbox: { width: 240, height: 100 }, aspectRatio: 1.333,
+      videoConstraints: cameraConstraints,
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+    };
+    const onDecoded = (decoded)=>{
+      vibrate(100);
+      document.getElementById('p_barcode').value = decoded;
+      playBeep(false);
+      stopBarcodeForInput();
+    };
+    html5QrCode2.start(cameraConstraints, scanConfig, onDecoded)
+      .catch(err=>{
+        html5QrCode2.start({facingMode:"environment"}, {fps:10, qrbox:{width:240,height:100}}, onDecoded)
+          .catch(e=>{ alert("🚨 카메라 오류: " + e); });
+      });
+  }
+  function stopBarcodeForInput(){
+    if (html5QrCode2 && html5QrCode2.isScanning) {
+      html5QrCode2.stop().then(()=>{
+        document.getElementById('reader2').style.display='none';
+        document.getElementById('stopBarcodeBtn').style.display='none';
+      }).catch(()=>{});
+    } else {
+      document.getElementById('reader2').style.display='none';
+      document.getElementById('stopBarcodeBtn').style.display='none';
+    }
+  }
+
+  const SEED_PRODUCTS = ["우알목심(냉동)","돈목전지","돈삼겹살(칠레산,06-06)","우삼겹양지(SWIFT)","돈삼겹살","돈후지 (냉동)","돈목뼈","살치살 (NB,프라임","우정육(다짐육","돈후지 (다짐육)(돈민","스페어립(곡물)","돈목잡(코네스토가)","돈삼겹살 (냉장","살치살 (EXCEL)","우삼겹양지(EXCEL)","우목뼈","돈지방","돈삼겹살 (BOSLER","돈갈비 (냉동)","안창살","LA갈비(National,NBP)","돈삼겹살(듀록)","우아롱사태","램플랩","돈갈비","돈삼겹살(미박","우볼살(KILCOY)","우설깃 (KILCOY)","주태","탕갈비(IOWA)빽립"];
+  
+  let pacData = { inputProducts:[...SEED_PRODUCTS], outputProducts:[...SEED_PRODUCTS], writers:[] };
+  const MIN_CHARS = 3;
+  
+  async function loadAutoComplete(){
+    try {
+      const res = await fetch(API_URL + "?action=getProductionAutoComplete");
+      const data = await res.json();
+      const merge = (a,b) => Array.from(new Set([...a, ...b]));
+      pacData.inputProducts = merge(data.inputProducts || [], SEED_PRODUCTS);
+      pacData.outputProducts = merge(data.outputProducts || [], SEED_PRODUCTS);
+      pacData.writers = data.writers || [];
+      setupAutocomplete();
+    } catch(err){ 
+      console.log("자동완성 로드 실패 (시드만 사용):", err); 
+      setupAutocomplete();
+    }
+  }
+  function setupAutocomplete(){
+    document.querySelectorAll('input[data-pac]').forEach(input => {
+      if (input._acSetup) return;
+      input._acSetup = true;
+      const key = input.dataset.pac;
+      const list = document.getElementById('pac_' + key);
+      if (!list) return;
+      function renderList(query){
+        const q = (query || '').trim();
+        const items = pacData[key] || [];
+        const minChars = (key === 'writers') ? 1 : MIN_CHARS;
+        if (q.length < minChars) { list.classList.remove('show'); return; }
+        const qL = q.toLowerCase();
+        const filtered = items.filter(v => v.toLowerCase().includes(qL)).slice(0, 12);
+        list.innerHTML = '';
+        if (filtered.length === 0) {
+          const h = document.createElement('div'); h.className='ac-hint'; h.textContent='일치 항목 없음 (직접 입력 가능)';
+          list.appendChild(h); list.classList.add('show'); return;
+        }
+        filtered.forEach(v => {
+          const d = document.createElement('div'); d.className='ac-item';
+          const idx = v.toLowerCase().indexOf(qL);
+          if (idx>=0) d.innerHTML = escapeHtml(v.slice(0,idx)) + '<b style="color:#9C27B0;">' + escapeHtml(v.slice(idx,idx+q.length)) + '</b>' + escapeHtml(v.slice(idx+q.length));
+          else d.textContent = v;
+          d.addEventListener('pointerdown', (e)=>{ e.preventDefault(); input.value = v; list.classList.remove('show'); });
+          list.appendChild(d);
+        });
+        list.classList.add('show');
+      }
+      input.addEventListener('focus', ()=> renderList(input.value));
+      input.addEventListener('input', ()=> renderList(input.value));
+      input.addEventListener('blur', ()=> { setTimeout(()=> list.classList.remove('show'), 200); });
+    });
+  }
+
+  // 계산기
+  let calcInput="", calcTotalSum=0, calcItemCount=0, calcDetailList=[], calcPaperLog="";
+  let calcBaseForMultiply=null, calcIsAutoDecimal=false;
+  function openCalculator(target){
+    calcTargetField = target || 'input';
+    document.getElementById('calcTarget').innerText = calcTargetField === 'input' 
+      ? '📥 투입 박스/중량 칸으로 전송됩니다' : '📤 생산 박스/중량 칸으로 전송됩니다';
+    calcInput=""; calcTotalSum=0; calcItemCount=0; calcDetailList=[]; calcPaperLog="";
+    document.getElementById('calcModal').classList.add('active');
+    calcUpdateDisplay(); calcRenderPaper();
+  }
+  function closeCalculator(){ document.getElementById('calcModal').classList.remove('active'); }
+  function calcRenderPaper(){ const p=document.getElementById('calcPaper'); p.innerText=calcPaperLog||"(누적 로그)"; p.scrollTop=p.scrollHeight; }
+  function calcAddLog(line){ calcPaperLog += (calcPaperLog?"\n":"")+line; calcRenderPaper(); }
+  function calcFmt(num,dec){ return Number(num).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+  function calcUpdateDisplay(){
+    const d=document.getElementById('calcDisplay'); let display;
+    if (calcBaseForMultiply!==null) display = String(calcBaseForMultiply)+" × "+(calcInput||"");
+    else if (!calcInput||calcInput==="0") display="0";
+    else if (calcInput==="0.") display="0.";
+    else if (calcIsAutoDecimal) {
+      const parts=calcInput.split("."); const int=parseInt(parts[0]||"0",10); const f=int.toLocaleString('en-US');
+      display = parts.length>1 ? f+"."+parts[1] : f;
+    } else {
+      if (calcInput.endsWith(".")) display = calcFmt(calcInput.slice(0,-1),0)+".";
+      else { const di=calcInput.indexOf("."); if (di>=0) display = Number(calcInput.slice(0,di)).toLocaleString('en-US')+"."+calcInput.slice(di+1); else display=Number(calcInput).toLocaleString('en-US'); }
+    }
+    d.innerText=display;
+  }
+  function calcNum(n){ vibrate(20); if (calcIsAutoDecimal){ let r=calcInput.replace(".","")+n; if (r.length<=2) calcInput=r; else calcInput=r.slice(0,r.length-2)+"."+r.slice(r.length-2); } else calcInput+=n; calcUpdateDisplay(); }
+  function calcBackspace(){ vibrate(20); if(!calcInput)return; if(calcIsAutoDecimal){let r=calcInput.replace(".","").slice(0,-1); if(!r)calcInput=""; else if(r.length<=2)calcInput=r; else calcInput=r.slice(0,r.length-2)+"."+r.slice(r.length-2);} else { calcInput=calcInput.slice(0,-1); if(calcInput==="."||calcInput==="-")calcInput=""; } calcUpdateDisplay(); }
+  function calcClear(){ vibrate(30); calcInput=""; calcBaseForMultiply=null; calcTotalSum=0; calcItemCount=0; calcDetailList=[]; calcAddLog("\nC ---------------- (RESET)"); calcUpdateDisplay(); }
+  function calcToggleDecimal(){ vibrate(20); calcIsAutoDecimal=!calcIsAutoDecimal; const b=document.getElementById('calcDotBtn'); if(calcIsAutoDecimal){ b.classList.add('active-decimal'); if(calcInput&&!calcInput.includes(".")&&calcInput.length>2) calcInput=calcInput.slice(0,calcInput.length-2)+"."+calcInput.slice(calcInput.length-2); } else b.classList.remove('active-decimal'); calcUpdateDisplay(); }
+  function calcInsertDot(){ vibrate(50); if(!calcIsAutoDecimal&&!calcInput.includes(".")){ calcInput+=calcInput?".":"0."; calcUpdateDisplay(); } }
+  (function setupDotBtn(){ const btn=document.getElementById('calcDotBtn'); if(!btn)return; let t=null, isLong=false;
+    btn.addEventListener('pointerdown',(e)=>{ e.preventDefault(); isLong=false; t=setTimeout(()=>{ isLong=true; calcInsertDot(); },600); });
+    btn.addEventListener('pointerup',(e)=>{ e.preventDefault(); if(t)clearTimeout(t); if(!isLong) calcToggleDecimal(); });
+    btn.addEventListener('pointercancel',()=>{ if(t)clearTimeout(t); });
+  })();
+  function calcMultiply(){ vibrate(20); if(calcInput&&calcInput!=="."){ calcBaseForMultiply=Number(calcInput); calcInput=""; calcUpdateDisplay(); } }
+  function calcPlus(){ vibrate(20); if((!calcInput||calcInput===".")&&calcBaseForMultiply===null) return; let w,c=1; if(calcBaseForMultiply!==null){w=calcBaseForMultiply;c=parseInt(calcInput,10)||1;calcBaseForMultiply=null;}else w=Number(calcInput); const add=w*c; calcTotalSum+=add; calcItemCount+=c; const ws=w.toFixed(2); for(let i=0;i<c;i++)calcDetailList.push(ws); const p=`[${String(calcItemCount).padStart(2,'0')}]`; calcAddLog(c>1?`${p} ${calcFmt(w,2)} × ${c} = ${calcFmt(add,2)} +`:`${p} ${calcFmt(add,2)} +`); calcInput=""; calcUpdateDisplay(); }
+  function calcMinus(){ vibrate(20); if((!calcInput||calcInput===".")&&calcBaseForMultiply===null) return; let w,c=1; if(calcBaseForMultiply!==null){w=calcBaseForMultiply;c=parseInt(calcInput,10)||1;calcBaseForMultiply=null;}else w=Number(calcInput); const sub=w*c; calcTotalSum-=sub; calcItemCount-=c; const ws=w.toFixed(2); for(let i=0;i<c;i++)calcDetailList.push("-"+ws); const p=`[${String(calcItemCount).padStart(2,'0')}]`; calcAddLog(c>1?`${p} ${calcFmt(w,2)} × ${c} = ${calcFmt(sub,2)} −`:`${p} ${calcFmt(sub,2)} −`); calcInput=""; calcUpdateDisplay(); }
+  function calcEqual(){ if(calcInput&&calcInput!==".") calcPlus(); }
+  function calcTotal(){ vibrate(20); if((calcInput&&calcInput!==".")||calcBaseForMultiply!==null) calcPlus(); calcAddLog("------------------"); calcAddLog(`COUNT : ${calcItemCount}`); calcAddLog(`TOTAL : ${calcFmt(calcTotalSum,2)} ★`); calcAddLog("------------------"); }
+  function calcSendBack(){
+    if(calcItemCount===0&&calcTotalSum===0){alert("계산된 데이터가 없습니다.");return;}
+    if (calcTargetField === 'input') {
+      document.getElementById('p_inputBoxCount').value = calcItemCount;
+      document.getElementById('p_inputWeight').value = calcTotalSum.toFixed(2);
+    } else {
+      document.getElementById('p_outputBoxCount').value = calcItemCount;
+      document.getElementById('p_outputWeight').value = calcTotalSum.toFixed(2);
+    }
+    closeCalculator();
+    playBeep(false);
+    updateYieldDisplay();
+  }
+
+  loadAutoComplete();
+  loadList();
+</script>
+</body>
+</html>
