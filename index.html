@@ -13,20 +13,15 @@
   .worker-box label { display:block; font-weight:bold; font-size:14px; margin-bottom:6px; color:#555; }
   .worker-box input { width:100%; padding:12px; font-size:17px; border:2px solid #ccc; border-radius:8px; }
   .menu-title { text-align:center; font-size:16px; color:#666; margin-bottom:16px; }
-  .menu-grid { display:flex; flex-direction:column; gap:16px; }
-  .menu-card {
-    background:#fff; padding:30px 20px; border-radius:14px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.1);
-    cursor:pointer; text-decoration:none; color:inherit;
-    border:3px solid transparent;
-    transition: all 0.15s;
-  }
+  .menu-grid { display:flex; flex-direction:column; gap:14px; }
+  .menu-card { background:#fff; padding:24px 20px; border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,0.1); cursor:pointer; text-decoration:none; color:inherit; border:3px solid transparent; transition:all 0.15s; }
   .menu-card:active { transform:scale(0.98); border-color:#1a73e8; }
-  .menu-card .icon { font-size:48px; text-align:center; margin-bottom:10px; }
-  .menu-card .title { font-size:22px; font-weight:bold; text-align:center; color:#1a73e8; margin-bottom:6px; }
-  .menu-card .desc { font-size:14px; color:#888; text-align:center; }
+  .menu-card .icon { font-size:42px; text-align:center; margin-bottom:8px; }
+  .menu-card .title { font-size:20px; font-weight:bold; text-align:center; color:#1a73e8; margin-bottom:4px; }
+  .menu-card .desc { font-size:13px; color:#888; text-align:center; }
   .card-scan { border-left:6px solid #4CAF50; }
   .card-input { border-left:6px solid #FF9800; }
+  .card-prod { border-left:6px solid #9C27B0; }
   .footer { text-align:center; color:#aaa; font-size:12px; margin-top:30px; }
 </style>
 </head>
@@ -35,9 +30,8 @@
 <div class="header">📦 신화미트 작업 선택</div>
 
 <div class="container">
-
   <div class="worker-box">
-    <label>작성자 (이 정보는 자동으로 다음 화면에 전달됩니다)</label>
+    <label>작성자 (다음 화면에 자동 전달)</label>
     <input type="text" id="workerName" placeholder="이름을 입력하세요" value="현장팀(웹)">
   </div>
 
@@ -47,13 +41,17 @@
     <a href="#" class="menu-card card-scan" onclick="goTo('scan.html'); return false;">
       <div class="icon">📦</div>
       <div class="title">송장 스캔</div>
-      <div class="desc">택배 송장 바코드를 스캔하여 송장내역에 등록</div>
+      <div class="desc">택배 송장 바코드를 송장내역에 등록</div>
     </a>
-
     <a href="#" class="menu-card card-input" onclick="goTo('input.html'); return false;">
       <div class="icon">📥</div>
       <div class="title">입고 등록</div>
-      <div class="desc">매입한 상품 정보와 중량을 입고일지에 등록</div>
+      <div class="desc">매입 상품 정보와 중량을 입고일지에 등록</div>
+    </a>
+    <a href="#" class="menu-card card-prod" onclick="goTo('production.html'); return false;">
+      <div class="icon">🏭</div>
+      <div class="title">생산 등록</div>
+      <div class="desc">투입/생산 내역과 수율을 생산일지에 등록</div>
     </a>
   </div>
 
@@ -61,14 +59,11 @@
 </div>
 
 <script>
-  // 페이지 이동 시 작성자 이름을 저장해서 다음 페이지에서 사용
   function goTo(page){
     const name = document.getElementById('workerName').value.trim() || '익명';
     localStorage.setItem('shinhwa_worker', name);
     location.href = page;
   }
-  
-  // 이전에 저장된 이름 복원
   const saved = localStorage.getItem('shinhwa_worker');
   if (saved) document.getElementById('workerName').value = saved;
 </script>
