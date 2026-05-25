@@ -21,7 +21,23 @@
   .btn-camera { background:#4CAF50; }
   .btn-stop { background:#E53935; display:none; }
   .btn-manual { background:#FF9800; }
-  #reader { width:100%; border-radius:10px; overflow:hidden; background:#000; min-height:180px; }
+  
+  /* ★ 카메라 영역 - 바코드 스캔용으로 짧게 (200px 고정) */
+  #reader { 
+    width: 100%; 
+    max-width: 100%;
+    border-radius: 10px; 
+    overflow: hidden; 
+    background: #000;
+    position: relative;
+  }
+  /* html5-qrcode가 만드는 비디오를 강제로 비율 맞추기 */
+  #reader video { 
+    width: 100% !important; 
+    height: 220px !important; 
+    object-fit: cover !important;
+  }
+  
   #status { margin-top:10px; padding:12px; border-radius:8px; font-weight:bold; text-align:center; font-size:15px; white-space:pre-line; display:none; }
   .success { background:#E8F5E9; color:#2E7D32; }
   .error { background:#FFEBEE; color:#C62828; }
@@ -52,7 +68,7 @@
   <div class="box">
     <label class="block">📸 카메라 스캔</label>
     <div class="camera-tip">
-      💡 <b>팁:</b> 바코드와 카메라 거리 <b>15~25cm</b>가 가장 잘 잡혀요. 포커스가 안 맞으면 화면을 <b>탭(터치)</b>해서 초점을 다시 잡아주세요.
+      💡 <b>팁:</b> 바코드 거리 <b>15~25cm</b>. 포커스 안 맞으면 화면을 <b>탭</b>하세요.
     </div>
     <div id="reader"></div>
     <div id="status"></div>
@@ -75,7 +91,7 @@
 
 <script>
   // ⚠️ 본인 앱스스크립트 URL로 수정!
-  const API_URL = "https://script.google.com/macros/s/여기에본인URL/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbxbhb1tD_9zJslhTS7MInKo0t5F5VfwOJwM0hXFP6CkufQsstmVgFicBOpjV86NXz9i/exec";
 
   const saved = localStorage.getItem('shinhwa_worker');
   if (saved) document.getElementById('workerName').value = saved;
@@ -90,6 +106,23 @@
 
   function speak(text){ try { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='ko-KR'; u.rate=1.1; window.speechSynthesis.speak(u); } } catch(e){} }
   function playBeep(isError){ try { const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.type='sine'; o.frequency.value=isError?300:900; o.start(); g.gain.exponentialRampToValueAtTime(0.00001,ctx.currentTime+0.15); o.stop(ctx.currentTime+0.15); } catch(e){} }
+  
+  // ★ 진동 함수 (스캔 성공 시 사용)
+  function vibrate(ms){ 
+    try { 
+      if (navigator.vibrate) navigator.vibrate(ms || 100); 
+    } catch(e){} 
+  }
+  // ★ 패턴 진동 (성공: 짧게-멈춤-짧게, 실패: 길게)
+  function vibratePattern(success){
+    try {
+      if (navigator.vibrate) {
+        if (success) navigator.vibrate([80, 50, 80]); // 짧게-짧게
+        else navigator.vibrate(300); // 길게
+      }
+    } catch(e){}
+  }
+  
   function showStatus(msg, type){ const s=document.getElementById('status'); s.style.display='block'; s.innerText=msg; s.className=type; }
   function addLog(code, ok, msg){
     const box = document.getElementById('logBox');
@@ -101,23 +134,27 @@
     box.prepend(div);
   }
 
-  // ★ 카메라 시작 (고해상도 + 자동초점)
+  // ★ 카메라 시작 (4:3 비율, 작게)
   function startScanner(){
     if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+    
+    // 4:3 비율의 작은 해상도 (바코드 스캔에 충분)
     const cameraConstraints = {
       facingMode: { ideal: "environment" },
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
+      width: { ideal: 1280 },
+      height: { ideal: 960 },
       focusMode: "continuous",
       advanced: [{ focusMode: "continuous" }]
     };
+    
     const scanConfig = {
       fps: 15,
-      qrbox: { width: 280, height: 120 },
-      aspectRatio: 1.7777,
+      qrbox: { width: 260, height: 100 }, // 가로로 긴 바코드 박스
+      aspectRatio: 1.333, // 4:3
       videoConstraints: cameraConstraints,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
+    
     html5QrCode.start(cameraConstraints, scanConfig, onScanSuccess)
       .then(()=>{
         document.getElementById('startBtn').style.display='none';
@@ -126,7 +163,7 @@
       })
       .catch(err=>{
         console.log("고해상도 실패, 폴백:", err);
-        html5QrCode.start({facingMode:"environment"}, {fps:10, qrbox:{width:280,height:120}}, onScanSuccess)
+        html5QrCode.start({facingMode:"environment"}, {fps:10, qrbox:{width:260,height:100}}, onScanSuccess)
           .then(()=>{
             document.getElementById('startBtn').style.display='none';
             document.getElementById('stopBtn').style.display='block';
@@ -135,7 +172,6 @@
       });
   }
   
-  // ★ 탭하면 그 지점에 포커스 (DSLR 터치포커스)
   function applyCameraTweaks(){
     try {
       const videoEl = document.querySelector('#reader video');
@@ -161,6 +197,10 @@
     const now = Date.now();
     if (decodedText === lastSent.code && (now-lastSent.time) < 3000) return;
     lastSent = { code:decodedText, time:now };
+    
+    // ★ 스캔되자마자 진동 (사용자에게 "잡혔다" 즉시 피드백)
+    vibrate(80);
+    
     sendToServer(decodedText);
   }
 
@@ -179,6 +219,7 @@
     const input = document.getElementById('manualInput');
     const code = input.value.trim();
     if (!code) { showStatus("🚨 송장번호를 입력해주세요.", 'error'); return; }
+    vibrate(80);
     sendToServer(code);
     input.value = '';
     input.focus();
@@ -189,24 +230,47 @@
     const workerName = document.getElementById('workerName').value || '익명';
     showStatus("⏳ 처리 중... " + barcode, 'processing');
     playBeep(false);
+    
+    // ★ fetch fail 디버깅을 위해 에러 상세 출력
     try {
-      const res = await fetch(API_URL, { method:"POST", body:JSON.stringify({action:"scan", barcode:barcode, workerName:workerName}) });
+      console.log("API_URL:", API_URL);
+      console.log("Sending:", barcode);
+      
+      const res = await fetch(API_URL, { 
+        method:"POST", 
+        body:JSON.stringify({action:"scan", barcode:barcode, workerName:workerName}) 
+      });
+      
+      console.log("Response status:", res.status);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      
       const data = await res.json();
+      console.log("Response data:", data);
+      
       if (data.status === 'success') {
+        vibratePattern(true);
         speak("등록 완료");
         showStatus("✅ " + barcode + "\n" + data.msg, 'success');
         addLog(barcode, true, data.msg);
       } else {
-        playBeep(true); speak(data.msg);
+        vibratePattern(false);
+        playBeep(true); 
+        speak(data.msg);
         showStatus("🚨 " + barcode + "\n" + data.msg, 'error');
         addLog(barcode, false, data.msg);
       }
     } catch(err){
+      vibratePattern(false);
       playBeep(true);
-      showStatus("❌ 통신 오류: " + err.message, 'error');
-      addLog(barcode, false, "통신오류");
+      // ★ 더 자세한 에러 메시지
+      const detailErr = err.message + 
+        (err.message.includes("Failed to fetch") ? 
+          "\n\n원인:\n1) API_URL 확인\n2) 앱스스크립트 새 버전 재배포 확인\n3) 인터넷 연결 확인" : "");
+      showStatus("❌ 통신 오류: " + detailErr, 'error');
+      addLog(barcode, false, "통신오류: " + err.message);
+      console.error("Fetch error:", err);
     } finally {
-      setTimeout(()=>{ isProcessing=false; document.getElementById('manualInput').focus(); }, 1200);
+      setTimeout(()=>{ isProcessing=false; document.getElementById('manualInput').focus(); }, 1500);
     }
   }
 </script>
