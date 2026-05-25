@@ -30,6 +30,7 @@
   .log div { padding:4px 0; border-bottom:1px dashed #ddd; }
   .log .ok { color:#2E7D32; }
   .log .ng { color:#C62828; }
+  .camera-tip { background:#FFF8E1; color:#5D4037; padding:10px; border-radius:6px; font-size:13px; margin-bottom:8px; line-height:1.5; }
 </style>
 </head>
 <body>
@@ -50,6 +51,9 @@
 
   <div class="box">
     <label class="block">📸 카메라 스캔</label>
+    <div class="camera-tip">
+      💡 <b>팁:</b> 바코드와 카메라 거리 <b>15~25cm</b>가 가장 잘 잡혀요. 포커스가 안 맞으면 화면을 <b>탭(터치)</b>해서 초점을 다시 잡아주세요.
+    </div>
     <div id="reader"></div>
     <div id="status"></div>
     <button id="startBtn" class="btn btn-camera" onclick="startScanner()">카메라 켜기</button>
@@ -71,9 +75,8 @@
 
 <script>
   // ⚠️ 본인 앱스스크립트 URL로 수정!
-  const API_URL = "https://script.google.com/macros/s/AKfycbxbhb1tD_9zJslhTS7MInKo0t5F5VfwOJwM0hXFP6CkufQsstmVgFicBOpjV86NXz9i/exec";
+  const API_URL = "https://script.google.com/macros/s/여기에본인URL/exec";
 
-  // 메인에서 저장한 작성자 이름 불러오기
   const saved = localStorage.getItem('shinhwa_worker');
   if (saved) document.getElementById('workerName').value = saved;
 
@@ -85,16 +88,9 @@
     if (e.key === 'Enter') { e.preventDefault(); submitManual(); }
   });
 
-  function speak(text){
-    try { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='ko-KR'; u.rate=1.1; window.speechSynthesis.speak(u); } } catch(e){}
-  }
-  function playBeep(isError){
-    try { const ctx=new (window.AudioContext||window.webkitAudioContext)(); const osc=ctx.createOscillator(); const gain=ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type='sine'; osc.frequency.value=isError?300:900; osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001,ctx.currentTime+0.15); osc.stop(ctx.currentTime+0.15); } catch(e){}
-  }
-  function showStatus(msg, type){
-    const s = document.getElementById('status');
-    s.style.display = 'block'; s.innerText = msg; s.className = type;
-  }
+  function speak(text){ try { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='ko-KR'; u.rate=1.1; window.speechSynthesis.speak(u); } } catch(e){} }
+  function playBeep(isError){ try { const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.type='sine'; o.frequency.value=isError?300:900; o.start(); g.gain.exponentialRampToValueAtTime(0.00001,ctx.currentTime+0.15); o.stop(ctx.currentTime+0.15); } catch(e){} }
+  function showStatus(msg, type){ const s=document.getElementById('status'); s.style.display='block'; s.innerText=msg; s.className=type; }
   function addLog(code, ok, msg){
     const box = document.getElementById('logBox');
     if (box.children.length === 1 && box.children[0].style.color) box.innerHTML = '';
@@ -104,12 +100,62 @@
     div.innerText = `[${time}] ${ok?'✅':'🚨'} ${code} — ${msg}`;
     box.prepend(div);
   }
+
+  // ★ 카메라 시작 (고해상도 + 자동초점)
   function startScanner(){
     if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start({facingMode:"environment"}, {fps:10, qrbox:{width:280,height:120}}, onScanSuccess)
-      .then(()=>{ document.getElementById('startBtn').style.display='none'; document.getElementById('stopBtn').style.display='block'; })
-      .catch(err=>{ alert("🚨 카메라 오류: " + err); });
+    const cameraConstraints = {
+      facingMode: { ideal: "environment" },
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      focusMode: "continuous",
+      advanced: [{ focusMode: "continuous" }]
+    };
+    const scanConfig = {
+      fps: 15,
+      qrbox: { width: 280, height: 120 },
+      aspectRatio: 1.7777,
+      videoConstraints: cameraConstraints,
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+    };
+    html5QrCode.start(cameraConstraints, scanConfig, onScanSuccess)
+      .then(()=>{
+        document.getElementById('startBtn').style.display='none';
+        document.getElementById('stopBtn').style.display='block';
+        applyCameraTweaks();
+      })
+      .catch(err=>{
+        console.log("고해상도 실패, 폴백:", err);
+        html5QrCode.start({facingMode:"environment"}, {fps:10, qrbox:{width:280,height:120}}, onScanSuccess)
+          .then(()=>{
+            document.getElementById('startBtn').style.display='none';
+            document.getElementById('stopBtn').style.display='block';
+          })
+          .catch(e=>{ alert("🚨 카메라 오류: " + e); });
+      });
   }
+  
+  // ★ 탭하면 그 지점에 포커스 (DSLR 터치포커스)
+  function applyCameraTweaks(){
+    try {
+      const videoEl = document.querySelector('#reader video');
+      if (!videoEl || !videoEl.srcObject) return;
+      const track = videoEl.srcObject.getVideoTracks()[0];
+      if (!track) return;
+      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      if (caps.focusMode && caps.focusMode.includes('continuous')) {
+        track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(()=>{});
+      }
+      videoEl.addEventListener('click', () => {
+        if (caps.focusMode && caps.focusMode.includes('single-shot')) {
+          track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] })
+            .then(()=> setTimeout(()=> track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(()=>{}), 800))
+            .catch(()=>{});
+        }
+      });
+    } catch(e) {}
+  }
+
   function onScanSuccess(decodedText){
     if (isProcessing) return;
     const now = Date.now();
@@ -117,6 +163,7 @@
     lastSent = { code:decodedText, time:now };
     sendToServer(decodedText);
   }
+
   function stopScanner(){
     if (html5QrCode && html5QrCode.isScanning) {
       html5QrCode.stop().then(()=>{
@@ -126,6 +173,7 @@
       }).catch(()=>{});
     }
   }
+
   function submitManual(){
     if (isProcessing) return;
     const input = document.getElementById('manualInput');
@@ -135,6 +183,7 @@
     input.value = '';
     input.focus();
   }
+
   async function sendToServer(barcode){
     isProcessing = true;
     const workerName = document.getElementById('workerName').value || '익명';
