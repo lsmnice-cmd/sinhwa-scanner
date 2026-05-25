@@ -8,7 +8,7 @@
 <style>
   * { box-sizing: border-box; }
   body { font-family:'Malgun Gothic',sans-serif; margin:0; padding:0; background:#f0f2f5; }
-  .header { background:#FF9800; color:#fff; padding:14px; display:flex; align-items:center; gap:10px; }
+  .header { background:#FF9800; color:#fff; padding:14px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:50; }
   .header .back { background:rgba(255,255,255,0.2); border:none; color:#fff; font-size:18px; padding:6px 12px; border-radius:6px; cursor:pointer; }
   .header .title { font-size:18px; font-weight:bold; flex:1; text-align:center; }
   .container { max-width:520px; margin:0 auto; padding:14px; }
@@ -16,7 +16,7 @@
   .row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
   .row label { font-weight:bold; min-width:55px; font-size:14px; }
   label.block { display:block; font-weight:bold; font-size:14px; margin:10px 0 4px; color:#333; }
-  input[type="text"], input[type="number"] { width:100%; padding:11px; font-size:16px; border:2px solid #ccc; border-radius:8px; }
+  input[type="text"], input[type="number"], input[type="date"] { width:100%; padding:11px; font-size:16px; border:2px solid #ccc; border-radius:8px; }
   textarea { width:100%; padding:11px; font-size:14px; border:2px solid #ccc; border-radius:8px; font-family:monospace; min-height:60px; }
   .btn { color:#fff; border:none; padding:13px; width:100%; font-size:16px; font-weight:bold; border-radius:8px; margin-top:8px; cursor:pointer; }
   .btn-camera { background:#4CAF50; }
@@ -24,6 +24,9 @@
   .btn-save { background:#2196F3; padding:16px; font-size:18px; }
   .btn-small { padding:10px; font-size:14px; width:auto; flex-shrink:0; }
   .btn-calc { background:#4CAF50; padding:16px; font-size:17px; }
+  .btn-add { background:#FF9800; padding:18px; font-size:18px; }
+  .btn-edit { background:#1a73e8; padding:8px 14px; font-size:13px; width:auto; }
+  .btn-delete { background:#E53935; padding:8px 14px; font-size:13px; width:auto; }
   #status2 { margin-top:10px; padding:12px; border-radius:8px; font-weight:bold; text-align:center; font-size:15px; white-space:pre-line; display:none; }
   .success { background:#E8F5E9; color:#2E7D32; }
   .error { background:#FFEBEE; color:#C62828; }
@@ -35,41 +38,39 @@
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .hint { font-size:12px; color:#888; margin-top:3px; }
   
-  /* 커스텀 자동완성 */
-  .ac-wrap { position: relative; }
-  .ac-wrap input { width: 100%; }
-  .ac-list {
-    display: none;
-    position: absolute;
-    top: 100%; left: 0; right: 0;
-    background: #fff;
-    border: 2px solid #1a73e8;
-    border-radius: 8px;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 100;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    margin-top: 2px;
-  }
-  .ac-list.show { display: block; }
-  .ac-item {
-    padding: 11px 12px;
-    cursor: pointer;
-    border-bottom: 1px solid #eee;
-    font-size: 15px;
-  }
-  .ac-item:last-child { border-bottom: none; }
-  .ac-item:active, .ac-item.hover { background: #E3F2FD; }
-  .ac-hint {
-    padding: 10px;
-    text-align: center;
-    color: #999;
-    font-size: 13px;
-    background: #FAFAFA;
-  }
+  /* 자동완성 */
+  .ac-wrap { position:relative; }
+  .ac-list { display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:2px solid #1a73e8; border-radius:8px; max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.15); margin-top:2px; }
+  .ac-list.show { display:block; }
+  .ac-item { padding:11px 12px; cursor:pointer; border-bottom:1px solid #eee; font-size:15px; }
+  .ac-item:last-child { border-bottom:none; }
+  .ac-item:active { background:#E3F2FD; }
+  .ac-hint { padding:10px; text-align:center; color:#999; font-size:13px; background:#FAFAFA; }
   
-  /* 계산기 모달 */
-  .calc-modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#263238; z-index:9999; flex-direction:column; }
+  /* 목록 카드 */
+  .list-item { background:#fff; border:1px solid #e0e0e0; border-left:4px solid #FF9800; border-radius:8px; padding:12px; margin-bottom:8px; }
+  .list-item .li-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .list-item .li-title { font-size:15px; font-weight:bold; color:#333; flex:1; }
+  .list-item .li-meta { font-size:13px; color:#666; margin-top:4px; }
+  .list-item .li-num { display:inline-block; background:#FF9800; color:#fff; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold; margin-right:6px; }
+  .list-item .li-detail { font-family:monospace; font-size:12px; color:#888; margin-top:6px; word-break:break-all; }
+  .list-item .li-actions { display:flex; gap:6px; margin-top:8px; }
+  .empty-msg { text-align:center; color:#999; padding:20px; font-size:14px; }
+  
+  /* 모달 */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; overflow-y:auto; padding:14px; }
+  .modal-overlay.active { display:block; }
+  .modal-content { background:#f0f2f5; max-width:520px; margin:0 auto; border-radius:12px; padding:14px; }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .modal-header .title { font-size:18px; font-weight:bold; color:#333; }
+  .modal-close { background:#E53935; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:bold; }
+  
+  /* 카메라 (짧게) */
+  #reader2 { width:100%; border-radius:10px; overflow:hidden; background:#000; display:none; margin-top:8px; }
+  #reader2 video { width:100% !important; height:200px !important; object-fit:cover !important; }
+  
+  /* 계산기 */
+  .calc-modal { display:none; position:fixed; inset:0; background:#263238; z-index:9999; flex-direction:column; }
   .calc-modal.active { display:flex; }
   .calc-header { background:#1a73e8; color:#fff; padding:12px; display:flex; justify-content:space-between; align-items:center; }
   .calc-header .title { font-weight:bold; font-size:16px; }
@@ -78,11 +79,9 @@
   .calc-display { background:#000; color:#0F0; padding:14px; margin:0 8px 8px; border-radius:8px; font-family:'Courier New',monospace; font-size:32px; text-align:right; font-weight:bold; min-height:60px; }
   .calc-keypad { padding:0 8px 8px; }
   .calc-row { display:flex; gap:6px; margin-bottom:6px; }
-  .calc-btn { flex:1; padding:18px 0; font-size:22px; font-weight:bold; border:none; border-radius:8px; cursor:pointer; color:#fff; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
+  .calc-btn { flex:1; padding:18px 0; font-size:22px; font-weight:bold; border:none; border-radius:8px; cursor:pointer; color:#fff; touch-action:manipulation; }
   .ck-num { background:#455A64; }
-  .ck-num:active { background:#37474F; }
   .ck-op { background:#FF9800; }
-  .ck-op:active { background:#F57C00; }
   .ck-fn { background:#78909C; font-size:18px; }
   .ck-fn.active-decimal { background:#FF9800; }
   .ck-clear { background:#E53935; }
@@ -102,84 +101,90 @@
 <div class="container">
 
   <div class="box">
-    <div class="row">
-      <label>작성자</label>
-      <input type="text" id="workerName" value="현장팀(웹)">
-    </div>
+    <label class="block">📅 작업 날짜</label>
+    <input type="date" id="targetDate">
+    <div class="hint">날짜를 바꾸면 해당 날짜의 입고 목록이 표시됩니다</div>
   </div>
 
-  <div class="box">
-    <label class="block">입고처 *</label>
-    <div class="ac-wrap">
-      <input type="text" id="in_vendor" placeholder="2글자 이상 입력 시 검색" autocomplete="off" data-ac="vendors">
-      <div class="ac-list" id="ac_vendors"></div>
-    </div>
-    
-    <label class="block">보관상태 *</label>
-    <div class="radio-group">
-      <label><input type="radio" name="storage" value="냉동" checked><span>냉동</span></label>
-      <label><input type="radio" name="storage" value="냉장"><span>냉장</span></label>
-      <label><input type="radio" name="storage" value="동결"><span>동결</span></label>
-    </div>
-    
-    <label class="block">상품명 *</label>
-    <div class="ac-wrap">
-      <input type="text" id="in_product" placeholder="2글자 이상 입력 시 검색" autocomplete="off" data-ac="products">
-      <div class="ac-list" id="ac_products"></div>
-    </div>
-    
-    <label class="block">브랜드 / 등급</label>
-    <div class="grid2">
-      <div class="ac-wrap">
-        <input type="text" id="in_brand" placeholder="브랜드" autocomplete="off" data-ac="brands">
-        <div class="ac-list" id="ac_brands"></div>
-      </div>
-      <div class="ac-wrap">
-        <input type="text" id="in_grade" placeholder="등급" autocomplete="off" data-ac="grades">
-        <div class="ac-list" id="ac_grades"></div>
-      </div>
-    </div>
-    
-    <label class="block">공장번호 / 원산지</label>
-    <div class="grid2">
-      <div class="ac-wrap">
-        <input type="text" id="in_factory" placeholder="공장번호" autocomplete="off" data-ac="factories">
-        <div class="ac-list" id="ac_factories"></div>
-      </div>
-      <div class="ac-wrap">
-        <input type="text" id="in_origin" placeholder="원산지" autocomplete="off" data-ac="origins">
-        <div class="ac-list" id="ac_origins"></div>
-      </div>
-    </div>
-    
-    <label class="block">제조일</label>
-    <input type="text" id="in_mfg" placeholder="예: 20251005 (숫자 8자리)" inputmode="numeric" maxlength="8">
-    
-    <label class="block">이력 식별번호 (12자리)</label>
-    <div style="display:flex; gap:6px;">
-      <input type="text" id="in_barcode" placeholder="바코드 스캔/입력" inputmode="numeric">
-      <button class="btn btn-camera btn-small" onclick="startBarcodeForInput()">📷</button>
-    </div>
-    <div id="reader2" style="display:none; margin-top:8px; border-radius:10px; overflow:hidden; background:#000; min-height:180px;"></div>
-    <button id="stopBarcodeBtn" class="btn btn-stop" style="margin-top:6px;" onclick="stopBarcodeForInput()">바코드 스캔 중지</button>
-    
-    <label class="block">박스수 / 총중량 (계산기 사용 권장)</label>
-    <button class="btn btn-calc" onclick="openCalculator()">🧮 계산기 열기</button>
-    <div class="grid2" style="margin-top:8px;">
-      <input type="number" id="in_boxcount" placeholder="박스 수" readonly style="background:#f5f5f5;">
-      <input type="number" id="in_totalweight" placeholder="총중량(kg)" step="0.01" readonly style="background:#f5f5f5;">
-    </div>
-    <div class="hint">계산기 사용 권장. 직접 입력하려면 칸을 더블탭</div>
-    
-    <label class="block">상세중량 (계산기에서 자동 채워짐)</label>
-    <textarea id="in_detail" placeholder="계산기를 사용하면 자동으로 채워집니다"></textarea>
-    
-    <div id="status2"></div>
-    
-    <button class="btn btn-save" onclick="saveInput()">💾 입고 내역 저장</button>
-    <button class="btn" style="background:#999;" onclick="clearInputForm()">입력 초기화</button>
+  <button class="btn btn-add" onclick="openAddModal()">➕ 새 입고 등록</button>
+
+  <div class="box" style="margin-top:14px;">
+    <label class="block">📋 선택 날짜의 입고 목록</label>
+    <div id="listArea"><div class="empty-msg">불러오는 중...</div></div>
   </div>
 
+</div>
+
+<!-- 입고 입력 모달 -->
+<div id="inputModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="title" id="modalTitle">➕ 새 입고 등록</span>
+      <button class="modal-close" onclick="closeModal()">✕ 닫기</button>
+    </div>
+
+    <div class="box">
+      <div class="row"><label>작성자</label><input type="text" id="workerName" value="현장팀(웹)"></div>
+      
+      <label class="block">입고처 *</label>
+      <div class="ac-wrap">
+        <input type="text" id="in_vendor" placeholder="3글자 이상 입력 시 검색" autocomplete="off" data-ac="vendors">
+        <div class="ac-list" id="ac_vendors"></div>
+      </div>
+      
+      <label class="block">보관상태 *</label>
+      <div class="radio-group">
+        <label><input type="radio" name="storage" value="냉동" checked><span>냉동</span></label>
+        <label><input type="radio" name="storage" value="냉장"><span>냉장</span></label>
+        <label><input type="radio" name="storage" value="동결"><span>동결</span></label>
+      </div>
+      
+      <label class="block">상품명 *</label>
+      <div class="ac-wrap">
+        <input type="text" id="in_product" placeholder="3글자 이상 입력 시 검색" autocomplete="off" data-ac="products">
+        <div class="ac-list" id="ac_products"></div>
+      </div>
+      
+      <label class="block">브랜드 / 등급</label>
+      <div class="grid2">
+        <div class="ac-wrap"><input type="text" id="in_brand" placeholder="브랜드" autocomplete="off" data-ac="brands"><div class="ac-list" id="ac_brands"></div></div>
+        <div class="ac-wrap"><input type="text" id="in_grade" placeholder="등급" autocomplete="off" data-ac="grades"><div class="ac-list" id="ac_grades"></div></div>
+      </div>
+      
+      <label class="block">공장번호 / 원산지</label>
+      <div class="grid2">
+        <div class="ac-wrap"><input type="text" id="in_factory" placeholder="공장번호" autocomplete="off" data-ac="factories"><div class="ac-list" id="ac_factories"></div></div>
+        <div class="ac-wrap"><input type="text" id="in_origin" placeholder="원산지" autocomplete="off" data-ac="origins"><div class="ac-list" id="ac_origins"></div></div>
+      </div>
+      
+      <label class="block">제조일</label>
+      <input type="text" id="in_mfg" placeholder="예: 20251005" inputmode="numeric" maxlength="8">
+      
+      <label class="block">이력 식별번호 (12자리)</label>
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="in_barcode" placeholder="바코드 스캔/입력" inputmode="numeric">
+        <button class="btn btn-camera btn-small" onclick="startBarcodeForInput()">📷</button>
+      </div>
+      <div id="reader2"></div>
+      <button id="stopBarcodeBtn" class="btn btn-stop" style="margin-top:6px;" onclick="stopBarcodeForInput()">바코드 스캔 중지</button>
+      
+      <label class="block">박스수 / 총중량</label>
+      <button class="btn btn-calc" onclick="openCalculator()">🧮 계산기 열기</button>
+      <div class="grid2" style="margin-top:8px;">
+        <input type="number" id="in_boxcount" placeholder="박스 수" step="1">
+        <input type="number" id="in_totalweight" placeholder="총중량(kg)" step="0.01">
+      </div>
+      <div class="hint">정량 제품은 계산기 없이 직접 입력 가능</div>
+      
+      <label class="block">개별중량 리스트 (계산기에서 자동, 직접 수정 가능)</label>
+      <textarea id="in_detail" placeholder="콤마(,)로 구분: 15.05, 16.3, 15.13"></textarea>
+      
+      <div id="status2"></div>
+      
+      <button class="btn btn-save" onclick="saveInput()" id="saveBtn">💾 저장</button>
+      <button class="btn btn-delete" id="deleteBtn" style="display:none;" onclick="deleteCurrentItem()">🗑️ 이 항목 삭제</button>
+    </div>
+  </div>
 </div>
 
 <!-- 계산기 모달 -->
@@ -224,33 +229,208 @@
 </div>
 
 <script>
-  // ⚠️ 본인 앱스스크립트 URL로 수정!
+  // ⚠️ 본인 앱스스크립트 URL!
   const API_URL = "https://script.google.com/macros/s/AKfycbxbhb1tD_9zJslhTS7MInKo0t5F5VfwOJwM0hXFP6CkufQsstmVgFicBOpjV86NXz9i/exec";
 
-  // 메인에서 저장한 작성자 이름 불러오기
   const saved = localStorage.getItem('shinhwa_worker');
   if (saved) document.getElementById('workerName').value = saved;
 
   let html5QrCode2 = null;
+  let editingRowNum = null;
 
-  function playBeep(isError){
-    try { const ctx=new (window.AudioContext||window.webkitAudioContext)(); const osc=ctx.createOscillator(); const gain=ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type='sine'; osc.frequency.value=isError?300:900; osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001,ctx.currentTime+0.15); osc.stop(ctx.currentTime+0.15); } catch(e){}
-  }
-  function speak(text){
-    try { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='ko-KR'; u.rate=1.1; window.speechSynthesis.speak(u); } } catch(e){}
-  }
-  function vibrate(ms){ try { if (navigator.vibrate) navigator.vibrate(ms||30); } catch(e){} }
+  (function initDate(){
+    const t = new Date();
+    const ymd = t.getFullYear() + "-" + String(t.getMonth()+1).padStart(2,'0') + "-" + String(t.getDate()).padStart(2,'0');
+    document.getElementById('targetDate').value = ymd;
+  })();
+  document.getElementById('targetDate').addEventListener('change', loadList);
 
-  // 바코드 스캔
+  function playBeep(isError){ try { const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.type='sine'; o.frequency.value=isError?300:900; o.start(); g.gain.exponentialRampToValueAtTime(0.00001,ctx.currentTime+0.15); o.stop(ctx.currentTime+0.15); } catch(e){} }
+  function speak(text){ try { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='ko-KR'; u.rate=1.1; window.speechSynthesis.speak(u); } } catch(e){} }
+  function vibrate(ms){ try { if (navigator.vibrate) navigator.vibrate(ms||80); } catch(e){} }
+  function vibratePattern(success){ try { if (navigator.vibrate) navigator.vibrate(success?[80,50,80]:300); } catch(e){} }
+  function showStatus2(msg, type){ const s=document.getElementById('status2'); s.style.display='block'; s.innerText=msg; s.className=type; }
+  function hideStatus2(){ document.getElementById('status2').style.display='none'; }
+  function escapeHtml(s){ if (s==null) return ''; return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ============ 모달 ============
+  function openAddModal(){
+    editingRowNum = null;
+    clearForm();
+    document.getElementById('modalTitle').innerText = "➕ 새 입고 등록";
+    document.getElementById('deleteBtn').style.display = 'none';
+    document.getElementById('inputModal').classList.add('active');
+    hideStatus2();
+  }
+  function openEditModal(item){
+    editingRowNum = item.rowNum;
+    clearForm();
+    document.getElementById('in_vendor').value = item.vendor || '';
+    document.getElementById('in_product').value = item.product || '';
+    document.getElementById('in_brand').value = item.brand || '';
+    document.getElementById('in_grade').value = item.grade || '';
+    document.getElementById('in_factory').value = item.factory || '';
+    document.getElementById('in_origin').value = item.origin || '';
+    document.getElementById('in_mfg').value = item.mfgDate || '';
+    document.getElementById('in_barcode').value = item.barcode || '';
+    document.getElementById('in_boxcount').value = item.boxCount || '';
+    document.getElementById('in_totalweight').value = item.totalWeight || '';
+    document.getElementById('in_detail').value = item.detailWeights || '';
+    const storage = item.storage || '냉동';
+    const radio = document.querySelector('input[name="storage"][value="'+storage+'"]');
+    if (radio) radio.checked = true;
+    document.getElementById('modalTitle').innerText = "✏️ 입고 수정";
+    document.getElementById('deleteBtn').style.display = 'block';
+    document.getElementById('inputModal').classList.add('active');
+    hideStatus2();
+  }
+  function closeModal(){
+    document.getElementById('inputModal').classList.remove('active');
+    editingRowNum = null;
+  }
+  function clearForm(){
+    ['in_vendor','in_product','in_brand','in_grade','in_factory','in_origin','in_mfg','in_barcode','in_boxcount','in_totalweight','in_detail'].forEach(id=>{
+      document.getElementById(id).value = '';
+    });
+    document.querySelector('input[name="storage"][value="냉동"]').checked = true;
+  }
+
+  // ============ 목록 ============
+  async function loadList(){
+    const date = document.getElementById('targetDate').value;
+    document.getElementById('listArea').innerHTML = '<div class="empty-msg">불러오는 중...</div>';
+    try {
+      const res = await fetch(API_URL + "?action=listByDate&sheet=input&date=" + encodeURIComponent(date));
+      const data = await res.json();
+      renderList(data.items || []);
+    } catch(err) {
+      document.getElementById('listArea').innerHTML = '<div class="empty-msg">목록 로드 실패: ' + err.message + '</div>';
+    }
+  }
+  function renderList(items){
+    const area = document.getElementById('listArea');
+    if (items.length === 0) {
+      area.innerHTML = '<div class="empty-msg">선택한 날짜에 입고 내역이 없습니다.<br>위 "➕ 새 입고 등록" 버튼을 눌러 등록하세요.</div>';
+      return;
+    }
+    area.innerHTML = '';
+    items.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+      const num = idx + 1;
+      const boxStr = item.boxCount ? item.boxCount + '박스' : '';
+      const wStr = item.totalWeight ? Number(item.totalWeight).toFixed(2) + 'kg' : '';
+      const sumLine = [boxStr, wStr].filter(Boolean).join(' / ');
+      div.innerHTML = `
+        <div class="li-head">
+          <div class="li-title"><span class="li-num">${num}</span>${escapeHtml(item.vendor)} / ${escapeHtml(item.product)}</div>
+        </div>
+        <div class="li-meta">${escapeHtml(item.storage)} ${item.brand?'· '+escapeHtml(item.brand):''} ${item.grade?'· '+escapeHtml(item.grade):''}</div>
+        <div class="li-meta">${sumLine}</div>
+        ${item.detailWeights ? '<div class="li-detail">개별: ' + escapeHtml(String(item.detailWeights)) + '</div>' : ''}
+        ${item.barcode ? '<div class="li-detail">이력: ' + escapeHtml(String(item.barcode)) + '</div>' : ''}
+        <div class="li-actions">
+          <button class="btn btn-edit" onclick='editItemBtn(${JSON.stringify(item).replace(/'/g,"&#39;")})'>✏️ 수정</button>
+        </div>
+      `;
+      area.appendChild(div);
+    });
+  }
+  function editItemBtn(item){ openEditModal(item); }
+
+  // ============ 저장/수정/삭제 ============
+  async function saveInput(){
+    const vendor = document.getElementById('in_vendor').value.trim();
+    const product = document.getElementById('in_product').value.trim();
+    if (!vendor || !product) { showStatus2("🚨 입고처와 상품명은 필수입니다.", 'error'); return; }
+    const payload = {
+      vendor, product,
+      targetDate: document.getElementById('targetDate').value,
+      storage: document.querySelector('input[name="storage"]:checked').value,
+      brand: document.getElementById('in_brand').value.trim(),
+      grade: document.getElementById('in_grade').value.trim(),
+      factory: document.getElementById('in_factory').value.trim(),
+      origin: document.getElementById('in_origin').value.trim(),
+      mfgDate: document.getElementById('in_mfg').value.trim(),
+      barcode: document.getElementById('in_barcode').value.trim(),
+      boxCount: document.getElementById('in_boxcount').value.trim(),
+      totalWeight: document.getElementById('in_totalweight').value.trim(),
+      detailWeights: document.getElementById('in_detail').value.trim()
+    };
+    if (editingRowNum) {
+      payload.action = "updateInput";
+      payload.rowNum = editingRowNum;
+    } else {
+      payload.action = "input";
+    }
+    showStatus2("⏳ 저장 중...", 'processing');
+    try {
+      const res = await fetch(API_URL, { method:"POST", body:JSON.stringify(payload) });
+      const data = await res.json();
+      if (data.status === 'success') {
+        vibratePattern(true);
+        playBeep(false); speak(editingRowNum ? "수정 완료" : "저장 완료");
+        showStatus2("✅ " + data.msg, 'success');
+        setTimeout(()=>{ closeModal(); loadList(); }, 800);
+      } else {
+        vibratePattern(false);
+        playBeep(true);
+        showStatus2("🚨 " + data.msg, 'error');
+      }
+    } catch(err){
+      vibratePattern(false);
+      playBeep(true);
+      showStatus2("❌ 통신 오류: " + err.message, 'error');
+    }
+  }
+  
+  async function deleteCurrentItem(){
+    if (!editingRowNum) return;
+    if (!confirm("이 입고 내역을 삭제하시겠습니까?")) return;
+    showStatus2("⏳ 삭제 중...", 'processing');
+    try {
+      const res = await fetch(API_URL, { method:"POST", body:JSON.stringify({ action:"deleteInput", rowNum:editingRowNum }) });
+      const data = await res.json();
+      if (data.status === 'success') {
+        playBeep(false);
+        showStatus2("✅ 삭제됨", 'success');
+        setTimeout(()=>{ closeModal(); loadList(); }, 600);
+      } else {
+        playBeep(true);
+        showStatus2("🚨 " + data.msg, 'error');
+      }
+    } catch(err){
+      playBeep(true);
+      showStatus2("❌ 통신 오류: " + err.message, 'error');
+    }
+  }
+
+  // ============ 바코드 스캔 ============
   function startBarcodeForInput(){
     document.getElementById('reader2').style.display = 'block';
     document.getElementById('stopBarcodeBtn').style.display = 'block';
     if (!html5QrCode2) html5QrCode2 = new Html5Qrcode("reader2");
-    html5QrCode2.start({facingMode:"environment"}, {fps:10, qrbox:{width:260,height:100}}, (decoded)=>{
+    const cameraConstraints = {
+      facingMode: { ideal: "environment" },
+      width: { ideal: 1280 }, height: { ideal: 960 },
+      focusMode: "continuous", advanced: [{ focusMode: "continuous" }]
+    };
+    const scanConfig = {
+      fps: 15, qrbox: { width: 240, height: 100 }, aspectRatio: 1.333,
+      videoConstraints: cameraConstraints,
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+    };
+    const onDecoded = (decoded) => {
+      vibrate(100);
       document.getElementById('in_barcode').value = decoded;
       playBeep(false);
       stopBarcodeForInput();
-    }).catch(err=>{ alert("🚨 카메라 오류: " + err); });
+    };
+    html5QrCode2.start(cameraConstraints, scanConfig, onDecoded)
+      .catch(err=>{
+        html5QrCode2.start({facingMode:"environment"}, {fps:10, qrbox:{width:240,height:100}}, onDecoded)
+          .catch(e=>{ alert("🚨 카메라 오류: " + e); });
+      });
   }
   function stopBarcodeForInput(){
     if (html5QrCode2 && html5QrCode2.isScanning) {
@@ -263,55 +443,10 @@
       document.getElementById('stopBarcodeBtn').style.display = 'none';
     }
   }
-  function showStatus2(msg, type){
-    const s = document.getElementById('status2');
-    s.style.display = 'block'; s.innerText = msg; s.className = type;
-  }
-  function clearInputForm(){
-    ['in_vendor','in_product','in_brand','in_grade','in_factory','in_origin','in_mfg','in_barcode','in_boxcount','in_totalweight','in_detail'].forEach(id=>{
-      document.getElementById(id).value = '';
-    });
-    document.querySelector('input[name="storage"][value="냉동"]').checked = true;
-    document.getElementById('status2').style.display = 'none';
-  }
-  async function saveInput(){
-    const vendor = document.getElementById('in_vendor').value.trim();
-    const product = document.getElementById('in_product').value.trim();
-    if (!vendor || !product) { showStatus2("🚨 입고처와 상품명은 필수입니다.", 'error'); return; }
-    const payload = {
-      action: "input", vendor, product,
-      storage: document.querySelector('input[name="storage"]:checked').value,
-      brand: document.getElementById('in_brand').value.trim(),
-      grade: document.getElementById('in_grade').value.trim(),
-      factory: document.getElementById('in_factory').value.trim(),
-      origin: document.getElementById('in_origin').value.trim(),
-      mfgDate: document.getElementById('in_mfg').value.trim(),
-      barcode: document.getElementById('in_barcode').value.trim(),
-      boxCount: document.getElementById('in_boxcount').value.trim(),
-      totalWeight: document.getElementById('in_totalweight').value.trim(),
-      detailWeights: document.getElementById('in_detail').value.trim()
-    };
-    showStatus2("⏳ 저장 중...", 'processing');
-    try {
-      const res = await fetch(API_URL, { method:"POST", body:JSON.stringify(payload) });
-      const data = await res.json();
-      if (data.status === 'success') {
-        playBeep(false); speak("저장 완료");
-        showStatus2("✅ " + data.msg, 'success');
-        setTimeout(()=>{ clearInputForm(); }, 1500);
-      } else {
-        playBeep(true);
-        showStatus2("🚨 " + data.msg, 'error');
-      }
-    } catch(err){
-      playBeep(true);
-      showStatus2("❌ 통신 오류: " + err.message, 'error');
-    }
-  }
 
-  // ============ 자동완성 (2글자 이상 입력 시) ============
+  // ============ 자동완성 (3글자 이상) ============
   let acData = { vendors:[], products:[], brands:[], grades:[], factories:[], origins:[] };
-  const MIN_CHARS = 3; // ★ 최소 입력 글자 수
+  const MIN_CHARS = 3;
   
   async function loadAutoComplete(){
     try {
@@ -326,238 +461,82 @@
       setupAutocomplete();
     } catch(err){ console.log("자동완성 로드 실패:", err); }
   }
-  
   function setupAutocomplete(){
     document.querySelectorAll('input[data-ac]').forEach(input => {
+      if (input._acSetup) return;
+      input._acSetup = true;
       const key = input.dataset.ac;
-      const listId = 'ac_' + key;
-      const list = document.getElementById(listId);
+      const list = document.getElementById('ac_' + key);
       if (!list) return;
-      
       function renderList(query){
         const q = (query || '').trim();
-        
-        // ★ 2글자 미만이면 드롭다운 안 띄움
-        if (q.length < MIN_CHARS) {
-          list.classList.remove('show');
-          return;
-        }
-        
-        const qLower = q.toLowerCase();
+        if (q.length < MIN_CHARS) { list.classList.remove('show'); return; }
+        const qL = q.toLowerCase();
         const items = acData[key] || [];
-        const filtered = items
-          .filter(v => v.toLowerCase().includes(qLower))
-          .slice(0, 10); // 최대 10개
-        
+        const filtered = items.filter(v => v.toLowerCase().includes(qL)).slice(0, 10);
         list.innerHTML = '';
-        
         if (filtered.length === 0) {
-          // 검색 결과 없음 표시 (잠깐만)
-          const hint = document.createElement('div');
-          hint.className = 'ac-hint';
-          hint.textContent = '일치하는 항목 없음 (직접 입력하세요)';
-          list.appendChild(hint);
-          list.classList.add('show');
-          return;
+          const h = document.createElement('div'); h.className='ac-hint'; h.textContent='일치하는 항목 없음';
+          list.appendChild(h); list.classList.add('show'); return;
         }
-        
         filtered.forEach(v => {
-          const div = document.createElement('div');
-          div.className = 'ac-item';
-          // 검색어 하이라이트
-          const idx = v.toLowerCase().indexOf(qLower);
-          if (idx >= 0) {
-            div.innerHTML = v.slice(0,idx) + '<b style="color:#1a73e8;">' + v.slice(idx, idx+q.length) + '</b>' + v.slice(idx+q.length);
-          } else {
-            div.textContent = v;
-          }
-          div.addEventListener('pointerdown', (e)=>{
-            e.preventDefault();
-            input.value = v;
-            list.classList.remove('show');
-          });
-          list.appendChild(div);
+          const d = document.createElement('div'); d.className='ac-item';
+          const idx = v.toLowerCase().indexOf(qL);
+          if (idx>=0) d.innerHTML = escapeHtml(v.slice(0,idx)) + '<b style="color:#1a73e8;">' + escapeHtml(v.slice(idx,idx+q.length)) + '</b>' + escapeHtml(v.slice(idx+q.length));
+          else d.textContent = v;
+          d.addEventListener('pointerdown', (e)=>{ e.preventDefault(); input.value = v; list.classList.remove('show'); });
+          list.appendChild(d);
         });
         list.classList.add('show');
       }
-      
       input.addEventListener('focus', ()=> renderList(input.value));
       input.addEventListener('input', ()=> renderList(input.value));
-      input.addEventListener('blur', ()=> {
-        setTimeout(()=> list.classList.remove('show'), 200);
-      });
+      input.addEventListener('blur', ()=> { setTimeout(()=> list.classList.remove('show'), 200); });
     });
   }
-  
-  loadAutoComplete();
 
   // ============ 계산기 ============
-  let calcInput = "", calcTotalSum = 0, calcItemCount = 0;
-  let calcDetailList = [], calcPaperLog = "";
-  let calcBaseForMultiply = null, calcIsAutoDecimal = false;
-
+  let calcInput="", calcTotalSum=0, calcItemCount=0, calcDetailList=[], calcPaperLog="";
+  let calcBaseForMultiply=null, calcIsAutoDecimal=false;
   function openCalculator(){ document.getElementById('calcModal').classList.add('active'); calcUpdateDisplay(); calcRenderPaper(); }
   function closeCalculator(){ document.getElementById('calcModal').classList.remove('active'); }
-  function calcRenderPaper(){
-    const p = document.getElementById('calcPaper');
-    p.innerText = calcPaperLog || "(여기에 누적 로그가 표시됩니다)";
-    p.scrollTop = p.scrollHeight;
-  }
-  function calcAddLog(line){ calcPaperLog += (calcPaperLog ? "\n" : "") + line; calcRenderPaper(); }
-  function calcFmt(num, dec){ return Number(num).toLocaleString('en-US', {minimumFractionDigits:dec, maximumFractionDigits:dec}); }
+  function calcRenderPaper(){ const p=document.getElementById('calcPaper'); p.innerText=calcPaperLog||"(누적 로그)"; p.scrollTop=p.scrollHeight; }
+  function calcAddLog(line){ calcPaperLog += (calcPaperLog?"\n":"")+line; calcRenderPaper(); }
+  function calcFmt(num,dec){ return Number(num).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
   function calcUpdateDisplay(){
-    const d = document.getElementById('calcDisplay');
-    let display;
-    if (calcBaseForMultiply !== null) {
-      display = String(calcBaseForMultiply) + " × " + (calcInput || "");
-    } else if (!calcInput || calcInput === "0") { display = "0"; }
-    else if (calcInput === "0.") { display = "0."; }
+    const d=document.getElementById('calcDisplay'); let display;
+    if (calcBaseForMultiply!==null) display = String(calcBaseForMultiply)+" × "+(calcInput||"");
+    else if (!calcInput||calcInput==="0") display="0";
+    else if (calcInput==="0.") display="0.";
     else if (calcIsAutoDecimal) {
-      const parts = calcInput.split(".");
-      const intPart = parseInt(parts[0]||"0", 10);
-      const formatted = intPart.toLocaleString('en-US');
-      display = parts.length > 1 ? formatted + "." + parts[1] : formatted;
+      const parts=calcInput.split("."); const int=parseInt(parts[0]||"0",10); const f=int.toLocaleString('en-US');
+      display = parts.length>1 ? f+"."+parts[1] : f;
     } else {
-      if (calcInput.endsWith(".")) { display = calcFmt(calcInput.slice(0,-1), 0) + "."; }
-      else {
-        const dotIdx = calcInput.indexOf(".");
-        if (dotIdx >= 0) { display = Number(calcInput.slice(0,dotIdx)).toLocaleString('en-US') + "." + calcInput.slice(dotIdx+1); }
-        else { display = Number(calcInput).toLocaleString('en-US'); }
-      }
+      if (calcInput.endsWith(".")) display = calcFmt(calcInput.slice(0,-1),0)+".";
+      else { const di=calcInput.indexOf("."); if (di>=0) display = Number(calcInput.slice(0,di)).toLocaleString('en-US')+"."+calcInput.slice(di+1); else display=Number(calcInput).toLocaleString('en-US'); }
     }
-    d.innerText = display;
+    d.innerText=display;
   }
-  function calcNum(n){
-    vibrate(20);
-    if (calcIsAutoDecimal) {
-      let raw = calcInput.replace(".", "") + n;
-      if (raw.length <= 2) calcInput = raw;
-      else calcInput = raw.slice(0, raw.length-2) + "." + raw.slice(raw.length-2);
-    } else { calcInput += n; }
-    calcUpdateDisplay();
-  }
-  function calcBackspace(){
-    vibrate(20);
-    if (!calcInput) return;
-    if (calcIsAutoDecimal) {
-      let raw = calcInput.replace(".", "").slice(0,-1);
-      if (!raw) calcInput = "";
-      else if (raw.length <= 2) calcInput = raw;
-      else calcInput = raw.slice(0, raw.length-2) + "." + raw.slice(raw.length-2);
-    } else {
-      calcInput = calcInput.slice(0,-1);
-      if (calcInput === "." || calcInput === "-") calcInput = "";
-    }
-    calcUpdateDisplay();
-  }
-  function calcClear(){
-    vibrate(30);
-    calcInput = ""; calcBaseForMultiply = null;
-    calcTotalSum = 0; calcItemCount = 0; calcDetailList = [];
-    calcAddLog("\nC ---------------- (RESET)");
-    calcUpdateDisplay();
-  }
-  function calcToggleDecimal(){
-    vibrate(20);
-    calcIsAutoDecimal = !calcIsAutoDecimal;
-    const btn = document.getElementById('calcDotBtn');
-    if (calcIsAutoDecimal) {
-      btn.classList.add('active-decimal');
-      if (calcInput && !calcInput.includes(".") && calcInput.length > 2) {
-        calcInput = calcInput.slice(0, calcInput.length-2) + "." + calcInput.slice(calcInput.length-2);
-      }
-    } else { btn.classList.remove('active-decimal'); }
-    calcUpdateDisplay();
-  }
-  function calcInsertDot(){
-    vibrate(50);
-    if (!calcIsAutoDecimal && !calcInput.includes(".")) {
-      calcInput += calcInput ? "." : "0.";
-      calcUpdateDisplay();
-    }
-  }
-  // 00.00 버튼: 짧게=토글, 길게=점 입력
-  (function setupDotBtn(){
-    const btn = document.getElementById('calcDotBtn');
-    if (!btn) return;
-    let longPressTimer = null;
-    let isLongPress = false;
-    btn.addEventListener('pointerdown', (e)=>{
-      e.preventDefault();
-      isLongPress = false;
-      longPressTimer = setTimeout(()=>{
-        isLongPress = true;
-        calcInsertDot();
-      }, 600);
-    });
-    btn.addEventListener('pointerup', (e)=>{
-      e.preventDefault();
-      if (longPressTimer) clearTimeout(longPressTimer);
-      if (!isLongPress) calcToggleDecimal();
-    });
-    btn.addEventListener('pointercancel', ()=>{
-      if (longPressTimer) clearTimeout(longPressTimer);
-    });
+  function calcNum(n){ vibrate(20); if (calcIsAutoDecimal){ let r=calcInput.replace(".","")+n; if (r.length<=2) calcInput=r; else calcInput=r.slice(0,r.length-2)+"."+r.slice(r.length-2); } else calcInput+=n; calcUpdateDisplay(); }
+  function calcBackspace(){ vibrate(20); if(!calcInput)return; if(calcIsAutoDecimal){let r=calcInput.replace(".","").slice(0,-1); if(!r)calcInput=""; else if(r.length<=2)calcInput=r; else calcInput=r.slice(0,r.length-2)+"."+r.slice(r.length-2);} else { calcInput=calcInput.slice(0,-1); if(calcInput==="."||calcInput==="-")calcInput=""; } calcUpdateDisplay(); }
+  function calcClear(){ vibrate(30); calcInput=""; calcBaseForMultiply=null; calcTotalSum=0; calcItemCount=0; calcDetailList=[]; calcAddLog("\nC ---------------- (RESET)"); calcUpdateDisplay(); }
+  function calcToggleDecimal(){ vibrate(20); calcIsAutoDecimal=!calcIsAutoDecimal; const b=document.getElementById('calcDotBtn'); if(calcIsAutoDecimal){ b.classList.add('active-decimal'); if(calcInput&&!calcInput.includes(".")&&calcInput.length>2) calcInput=calcInput.slice(0,calcInput.length-2)+"."+calcInput.slice(calcInput.length-2); } else b.classList.remove('active-decimal'); calcUpdateDisplay(); }
+  function calcInsertDot(){ vibrate(50); if(!calcIsAutoDecimal&&!calcInput.includes(".")){ calcInput+=calcInput?".":"0."; calcUpdateDisplay(); } }
+  (function setupDotBtn(){ const btn=document.getElementById('calcDotBtn'); if(!btn)return; let t=null, isLong=false;
+    btn.addEventListener('pointerdown',(e)=>{ e.preventDefault(); isLong=false; t=setTimeout(()=>{ isLong=true; calcInsertDot(); },600); });
+    btn.addEventListener('pointerup',(e)=>{ e.preventDefault(); if(t)clearTimeout(t); if(!isLong) calcToggleDecimal(); });
+    btn.addEventListener('pointercancel',()=>{ if(t)clearTimeout(t); });
   })();
-  function calcMultiply(){
-    vibrate(20);
-    if (calcInput && calcInput !== ".") { calcBaseForMultiply = Number(calcInput); calcInput = ""; calcUpdateDisplay(); }
-  }
-  function calcPlus(){
-    vibrate(20);
-    if ((!calcInput || calcInput === ".") && calcBaseForMultiply === null) return;
-    let weight, count = 1;
-    if (calcBaseForMultiply !== null) { weight = calcBaseForMultiply; count = parseInt(calcInput,10)||1; calcBaseForMultiply = null; }
-    else { weight = Number(calcInput); }
-    const add = weight * count;
-    calcTotalSum += add; calcItemCount += count;
-    const wStr = weight.toFixed(2);
-    for (let i=0;i<count;i++) calcDetailList.push(wStr);
-    const prefix = `[${String(calcItemCount).padStart(2,'0')}]`;
-    const line = count > 1 ? `${prefix} ${calcFmt(weight,2)} × ${count} = ${calcFmt(add,2)} +` : `${prefix} ${calcFmt(add,2)} +`;
-    calcAddLog(line);
-    calcInput = ""; calcUpdateDisplay();
-  }
-  function calcMinus(){
-    vibrate(20);
-    if ((!calcInput || calcInput === ".") && calcBaseForMultiply === null) return;
-    let weight, count = 1;
-    if (calcBaseForMultiply !== null) { weight = calcBaseForMultiply; count = parseInt(calcInput,10)||1; calcBaseForMultiply = null; }
-    else { weight = Number(calcInput); }
-    const sub = weight * count;
-    calcTotalSum -= sub; calcItemCount -= count;
-    const wStr = weight.toFixed(2);
-    for (let i=0;i<count;i++) calcDetailList.push("-" + wStr);
-    const prefix = `[${String(calcItemCount).padStart(2,'0')}]`;
-    const line = count > 1 ? `${prefix} ${calcFmt(weight,2)} × ${count} = ${calcFmt(sub,2)} −` : `${prefix} ${calcFmt(sub,2)} −`;
-    calcAddLog(line);
-    calcInput = ""; calcUpdateDisplay();
-  }
-  function calcEqual(){ if (calcInput && calcInput !== ".") calcPlus(); }
-  function calcTotal(){
-    vibrate(20);
-    if ((calcInput && calcInput !== ".") || calcBaseForMultiply !== null) calcPlus();
-    calcAddLog("------------------");
-    calcAddLog(`ITEM COUNT : ${calcItemCount}`);
-    calcAddLog(`TOTAL      : ${calcFmt(calcTotalSum,2)} ★`);
-    calcAddLog("------------------");
-  }
-  function calcSendBack(){
-    if (calcItemCount === 0 && calcTotalSum === 0) { alert("계산된 데이터가 없습니다."); return; }
-    document.getElementById('in_boxcount').value = calcItemCount;
-    document.getElementById('in_totalweight').value = calcTotalSum.toFixed(2);
-    document.getElementById('in_detail').value = calcDetailList.join(", ");
-    calcInput = ""; calcBaseForMultiply = null;
-    calcTotalSum = 0; calcItemCount = 0; calcDetailList = []; calcPaperLog = "";
-    closeCalculator();
-    playBeep(false);
-    showStatus2("✅ 계산 결과가 입력되었습니다.", 'success');
-  }
-  // 읽기전용 칸 더블탭으로 직접 입력 가능
-  ['in_boxcount','in_totalweight'].forEach(id=>{
-    const el = document.getElementById(id);
-    el.addEventListener('dblclick', ()=>{ el.removeAttribute('readonly'); el.style.background='#fff'; el.focus(); });
-  });
+  function calcMultiply(){ vibrate(20); if(calcInput&&calcInput!=="."){ calcBaseForMultiply=Number(calcInput); calcInput=""; calcUpdateDisplay(); } }
+  function calcPlus(){ vibrate(20); if((!calcInput||calcInput===".")&&calcBaseForMultiply===null) return; let w,c=1; if(calcBaseForMultiply!==null){w=calcBaseForMultiply;c=parseInt(calcInput,10)||1;calcBaseForMultiply=null;}else w=Number(calcInput); const add=w*c; calcTotalSum+=add; calcItemCount+=c; const ws=w.toFixed(2); for(let i=0;i<c;i++)calcDetailList.push(ws); const p=`[${String(calcItemCount).padStart(2,'0')}]`; calcAddLog(c>1?`${p} ${calcFmt(w,2)} × ${c} = ${calcFmt(add,2)} +`:`${p} ${calcFmt(add,2)} +`); calcInput=""; calcUpdateDisplay(); }
+  function calcMinus(){ vibrate(20); if((!calcInput||calcInput===".")&&calcBaseForMultiply===null) return; let w,c=1; if(calcBaseForMultiply!==null){w=calcBaseForMultiply;c=parseInt(calcInput,10)||1;calcBaseForMultiply=null;}else w=Number(calcInput); const sub=w*c; calcTotalSum-=sub; calcItemCount-=c; const ws=w.toFixed(2); for(let i=0;i<c;i++)calcDetailList.push("-"+ws); const p=`[${String(calcItemCount).padStart(2,'0')}]`; calcAddLog(c>1?`${p} ${calcFmt(w,2)} × ${c} = ${calcFmt(sub,2)} −`:`${p} ${calcFmt(sub,2)} −`); calcInput=""; calcUpdateDisplay(); }
+  function calcEqual(){ if(calcInput&&calcInput!==".") calcPlus(); }
+  function calcTotal(){ vibrate(20); if((calcInput&&calcInput!==".")||calcBaseForMultiply!==null) calcPlus(); calcAddLog("------------------"); calcAddLog(`ITEM COUNT : ${calcItemCount}`); calcAddLog(`TOTAL      : ${calcFmt(calcTotalSum,2)} ★`); calcAddLog("------------------"); }
+  function calcSendBack(){ if(calcItemCount===0&&calcTotalSum===0){alert("계산된 데이터가 없습니다.");return;} document.getElementById('in_boxcount').value=calcItemCount; document.getElementById('in_totalweight').value=calcTotalSum.toFixed(2); document.getElementById('in_detail').value=calcDetailList.join(", "); calcInput=""; calcBaseForMultiply=null; calcTotalSum=0; calcItemCount=0; calcDetailList=[]; calcPaperLog=""; closeCalculator(); playBeep(false); }
+
+  // 초기 실행
+  loadAutoComplete();
+  loadList();
 </script>
 </body>
 </html>
