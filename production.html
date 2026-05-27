@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>생산 등록</title>
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body { font-family:'Malgun Gothic',sans-serif; margin:0; padding:0; background:#f0f2f5; }
   .header { background:#9C27B0; color:#fff; padding:14px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:50; }
   .header .back { background:rgba(255,255,255,0.2); border:none; color:#fff; font-size:18px; padding:6px 12px; border-radius:6px; cursor:pointer; }
   .header .title { font-size:18px; font-weight:bold; flex:1; text-align:center; }
-  .container { max-width:520px; margin:0 auto; padding:14px; }
+  .container { max-width:680px; margin:0 auto; padding:14px; }
   .box { background:#fff; padding:14px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.08); margin-bottom:12px; }
   .row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
   .row label { font-weight:bold; min-width:55px; font-size:14px; }
@@ -25,7 +26,8 @@
   .btn-small { padding:10px; font-size:14px; width:auto; flex-shrink:0; }
   .btn-calc { background:#4CAF50; padding:16px; font-size:17px; }
   .btn-add { background:#9C27B0; padding:18px; font-size:18px; }
-  .btn-edit { background:#1a73e8; padding:8px 14px; font-size:13px; width:auto; }
+  .btn-share { background:#FF9800; padding:16px; font-size:17px; }
+  .btn-edit { background:#1a73e8; padding:6px 10px; font-size:12px; width:auto; }
   .btn-delete { background:#E53935; padding:8px 14px; font-size:13px; width:auto; }
   #status2 { margin-top:10px; padding:12px; border-radius:8px; font-weight:bold; text-align:center; font-size:15px; white-space:pre-line; display:none; }
   .success { background:#E8F5E9; color:#2E7D32; }
@@ -38,6 +40,7 @@
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .hint { font-size:12px; color:#888; margin-top:3px; }
   
+  /* 자동완성 */
   .ac-wrap { position:relative; }
   .ac-list { display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:2px solid #9C27B0; border-radius:8px; max-height:240px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.15); margin-top:2px; }
   .ac-list.show { display:block; }
@@ -46,18 +49,47 @@
   .ac-item:active { background:#F3E5F5; }
   .ac-hint { padding:10px; text-align:center; color:#999; font-size:13px; background:#FAFAFA; }
   
-  .list-item { background:#fff; border:1px solid #e0e0e0; border-left:4px solid #9C27B0; border-radius:8px; padding:12px; margin-bottom:8px; }
-  .list-item .li-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-  .list-item .li-title { font-size:15px; font-weight:bold; color:#333; flex:1; }
-  .list-item .li-meta { font-size:13px; color:#666; margin-top:4px; }
-  .list-item .li-num { display:inline-block; background:#9C27B0; color:#fff; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold; margin-right:6px; }
-  .list-item .li-tag { display:inline-block; background:#E1BEE7; color:#4A148C; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:bold; margin-right:4px; }
-  .list-item .li-tag.morning { background:#FFE0B2; color:#E65100; }
-  .list-item .li-tag.afternoon { background:#C8E6C9; color:#1B5E20; }
-  .list-item .li-yield { font-weight:bold; color:#2E7D32; }
-  .list-item .li-yield.low { color:#E53935; }
-  .list-item .li-actions { display:flex; gap:6px; margin-top:8px; }
+  /* ★ 정렬 필터 버튼 */
+  .filter-bar { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .filter-btn { 
+    padding:8px 14px; font-size:13px; font-weight:bold; 
+    border:2px solid #9C27B0; background:#fff; color:#9C27B0;
+    border-radius:20px; cursor:pointer; flex:1; min-width:60px;
+  }
+  .filter-btn.active { background:#9C27B0; color:#fff; }
+  
+  /* ★ 목록 = 표 형태 */
+  .list-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; background:#fff; }
+  .list-table th { 
+    background:#F3E5F5; color:#4A148C; padding:8px 4px; 
+    font-size:11px; font-weight:bold; text-align:center;
+    border:1px solid #ccc; white-space:nowrap;
+  }
+  .list-table td { 
+    padding:6px 4px; border:1px solid #ddd; 
+    text-align:center; vertical-align:middle;
+    word-break:break-word;
+  }
+  .list-table tr:nth-child(even) { background:#FAFAFA; }
+  .list-table tr:hover { background:#F3E5F5; }
+  .list-table .col-num { width:30px; background:#9C27B0; color:#fff; font-weight:bold; }
+  .list-table .col-product { text-align:left; font-weight:bold; }
+  .list-table .col-yield { font-weight:bold; }
+  .list-table .col-yield.low { color:#E53935; }
+  .list-table .col-yield.good { color:#2E7D32; }
+  .list-table .tag { 
+    display:inline-block; padding:2px 6px; border-radius:4px; 
+    font-size:10px; font-weight:bold; 
+  }
+  .tag-yuk { background:#E1BEE7; color:#4A148C; }
+  .tag-gol { background:#FFCCBC; color:#BF360C; }
+  .tag-am { background:#FFE0B2; color:#E65100; }
+  .tag-pm { background:#C8E6C9; color:#1B5E20; }
   .empty-msg { text-align:center; color:#999; padding:20px; font-size:14px; }
+  .summary { 
+    background:#F3E5F5; padding:10px; border-radius:8px; 
+    margin-top:8px; font-size:13px; color:#4A148C; text-align:center;
+  }
   
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; overflow-y:auto; padding:14px; }
   .modal-overlay.active { display:block; }
@@ -89,6 +121,40 @@
   .ck-total { background:#FF9800; }
   .ck-send { background:#4CAF50; font-size:17px; }
   .calc-btn:active { transform:scale(0.95); }
+  
+  /* ★ 일일마감일지 캡처용 (숨겨진 영역) */
+  .report-area {
+    position:fixed; left:-9999px; top:0;
+    width:800px; background:#fff; padding:20px;
+    font-family:'Malgun Gothic',sans-serif;
+  }
+  .report-area .r-title {
+    text-align:center; font-size:28px; font-weight:bold;
+    padding:16px; border:2px solid #000; margin-bottom:14px;
+  }
+  .report-area .r-info {
+    display:flex; gap:8px; margin-bottom:12px; font-size:14px;
+  }
+  .report-area .r-info-cell {
+    border:1px solid #000; padding:8px 12px;
+  }
+  .report-area .r-info-cell.label { background:#f5f5f5; font-weight:bold; min-width:50px; text-align:center; }
+  .report-area table {
+    width:100%; border-collapse:collapse; font-size:14px;
+  }
+  .report-area table th, .report-area table td {
+    border:1px solid #000; padding:8px 6px; text-align:center;
+  }
+  .report-area table th {
+    background:#f0f0f0; font-weight:bold;
+  }
+  .report-area table .col-input { background:#FFF8E1; }
+  .report-area table .col-output { background:#E8F5E9; }
+  .report-area .r-leftcol {
+    background:#f5f5f5; font-weight:bold; vertical-align:middle;
+    writing-mode:vertical-rl; text-orientation:upright;
+    letter-spacing:5px; padding:8px;
+  }
 </style>
 </head>
 <body>
@@ -100,6 +166,9 @@
 
 <div class="container">
 
+  <!-- ★ 공유 버튼 (작업 날짜 위) -->
+  <button class="btn btn-share" onclick="shareAsImage()">📤 일일마감일지 카톡으로 공유</button>
+
   <div class="box">
     <label class="block">📅 작업 날짜</label>
     <input type="date" id="targetDate">
@@ -109,10 +178,23 @@
 
   <div class="box" style="margin-top:14px;">
     <label class="block">📋 선택 날짜의 생산 목록</label>
+    
+    <!-- ★ 정렬 필터 -->
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">전체</button>
+      <button class="filter-btn" data-filter="yuk" onclick="setFilter('yuk', this)">육절기</button>
+      <button class="filter-btn" data-filter="gol" onclick="setFilter('gol', this)">골절기</button>
+      <button class="filter-btn" data-filter="am" onclick="setFilter('am', this)">오전</button>
+      <button class="filter-btn" data-filter="pm" onclick="setFilter('pm', this)">오후</button>
+    </div>
+    
     <div id="listArea"><div class="empty-msg">불러오는 중...</div></div>
   </div>
 
 </div>
+
+<!-- 숨겨진 일일마감일지 캡처 영역 -->
+<div id="reportArea" class="report-area"></div>
 
 <!-- 생산 입력 모달 -->
 <div id="inputModal" class="modal-overlay">
@@ -242,6 +324,8 @@
   let html5QrCode2 = null;
   let editingRowNum = null;
   let calcTargetField = 'input';
+  let currentItems = []; // 현재 날짜의 모든 항목
+  let currentFilter = 'all';
   const savedWorker = localStorage.getItem('shinhwa_worker') || '';
 
   (function initDate(){
@@ -320,55 +404,111 @@
     document.getElementById(id).addEventListener('input', updateYieldDisplay);
   });
 
+  // ============ 목록 로드 ============
   async function loadList(){
     const date = document.getElementById('targetDate').value;
     document.getElementById('listArea').innerHTML = '<div class="empty-msg">불러오는 중...</div>';
     try {
       const res = await fetch(API_URL + "?action=listByDate&sheet=production&date=" + encodeURIComponent(date));
       const data = await res.json();
-      renderList(data.items || []);
+      currentItems = data.items || [];
+      renderList();
     } catch(err) {
       document.getElementById('listArea').innerHTML = '<div class="empty-msg">목록 로드 실패: ' + err.message + '</div>';
     }
   }
-  function renderList(items){
+
+  // ★ 정렬 필터
+  function setFilter(filter, btn){
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+  }
+
+  function filterItems(items){
+    if (currentFilter === 'all') return items;
+    return items.filter(item => {
+      if (currentFilter === 'yuk') return item.machine === '육절기';
+      if (currentFilter === 'gol') return item.machine === '골절기';
+      if (currentFilter === 'am') return item.timeSlot === '오전';
+      if (currentFilter === 'pm') return item.timeSlot === '오후';
+      return true;
+    });
+  }
+
+  // ★ 표(테이블) 형태로 렌더
+  function renderList(){
     const area = document.getElementById('listArea');
-    if (items.length === 0) {
-      area.innerHTML = '<div class="empty-msg">선택한 날짜에 생산 내역이 없습니다.<br>위 "➕ 새 생산 등록" 버튼을 눌러 등록하세요.</div>';
+    const filtered = filterItems(currentItems);
+    
+    if (filtered.length === 0) {
+      area.innerHTML = '<div class="empty-msg">선택한 조건에 해당하는 생산 내역이 없습니다.<br>위 "➕ 새 생산 등록" 버튼을 눌러 등록하세요.</div>';
       return;
     }
-    area.innerHTML = '';
-    items.forEach((item, idx) => {
-      const div = document.createElement('div');
-      div.className = 'list-item';
+    
+    let totalInputW = 0, totalOutputW = 0;
+    
+    let html = '<table class="list-table">';
+    html += '<thead><tr>';
+    html += '<th class="col-num">#</th>';
+    html += '<th>구분</th>';
+    html += '<th>품목</th>';
+    html += '<th>투입(박스/kg)</th>';
+    html += '<th>생산(박스/kg)</th>';
+    html += '<th>수율</th>';
+    html += '<th>메모</th>';
+    html += '<th>편집</th>';
+    html += '</tr></thead><tbody>';
+    
+    filtered.forEach((item, idx) => {
       const num = idx + 1;
-      const tsClass = item.timeSlot === '오후' ? 'afternoon' : 'morning';
-      const yieldStr = item.yieldPct ? Number(item.yieldPct).toFixed(2) + '%' : '-';
-      const yieldClass = (item.yieldPct && Number(item.yieldPct) < 85) ? 'low' : '';
-      const inLine = `투입: ${item.inputBoxCount||'-'}박스 / ${item.inputWeight?Number(item.inputWeight).toFixed(2)+'kg':'-'}`;
-      const outLine = `생산: ${item.outputBoxCount||'-'}박스 / ${item.outputWeight?Number(item.outputWeight).toFixed(2)+'kg':'-'}`;
-      div.innerHTML = `
-        <div class="li-head">
-          <div class="li-title"><span class="li-num">${num}</span>${escapeHtml(item.inputProduct)}</div>
-        </div>
-        <div class="li-meta">
-          <span class="li-tag">${escapeHtml(item.machine||'-')}</span>
-          <span class="li-tag ${tsClass}">${escapeHtml(item.timeSlot||'-')}</span>
-          ${item.writer?'작성: '+escapeHtml(item.writer):''}
-        </div>
-        <div class="li-meta">${inLine}</div>
-        <div class="li-meta">${outLine}</div>
-        <div class="li-meta">수율: <span class="li-yield ${yieldClass}">${yieldStr}</span></div>
-        ${item.memo ? '<div class="li-meta">📝 ' + escapeHtml(item.memo) + '</div>' : ''}
-        <div class="li-actions">
-          <button class="btn btn-edit" onclick='editItemBtn(${JSON.stringify(item).replace(/'/g,"&#39;")})'>✏️ 수정</button>
-        </div>
-      `;
-      area.appendChild(div);
+      const mTag = item.machine === '골절기' 
+        ? '<span class="tag tag-gol">골</span>' 
+        : '<span class="tag tag-yuk">육</span>';
+      const tTag = item.timeSlot === '오후' 
+        ? '<span class="tag tag-pm">PM</span>' 
+        : '<span class="tag tag-am">AM</span>';
+      
+      const inBox = item.inputBoxCount || '-';
+      const inW = item.inputWeight ? Number(item.inputWeight).toFixed(2) : '-';
+      const outBox = item.outputBoxCount || '-';
+      const outW = item.outputWeight ? Number(item.outputWeight).toFixed(2) : '-';
+      
+      const yieldNum = item.yieldPct ? Number(item.yieldPct) : null;
+      const yieldStr = yieldNum !== null ? yieldNum.toFixed(1) + '%' : '-';
+      const yieldClass = yieldNum !== null ? (yieldNum >= 95 ? 'good' : (yieldNum < 85 ? 'low' : '')) : '';
+      
+      if (item.inputWeight) totalInputW += Number(item.inputWeight);
+      if (item.outputWeight) totalOutputW += Number(item.outputWeight);
+      
+      html += '<tr>';
+      html += `<td class="col-num">${num}</td>`;
+      html += `<td>${mTag} ${tTag}</td>`;
+      html += `<td class="col-product">${escapeHtml(item.inputProduct)}${item.outputProduct && item.outputProduct !== item.inputProduct ? '<br><small style="color:#666;">→' + escapeHtml(item.outputProduct) + '</small>' : ''}</td>`;
+      html += `<td>${inBox}박 / ${inW}kg</td>`;
+      html += `<td>${outBox}박 / ${outW}kg</td>`;
+      html += `<td class="col-yield ${yieldClass}">${yieldStr}</td>`;
+      html += `<td style="font-size:11px; max-width:80px; text-align:left;">${escapeHtml(item.memo || '')}</td>`;
+      html += `<td><button class="btn btn-edit" onclick='editItemBtn(${JSON.stringify(item).replace(/'/g,"&#39;")})'>✏️</button></td>`;
+      html += '</tr>';
     });
+    
+    html += '</tbody></table>';
+    
+    // 요약
+    html += `<div class="summary">📊 합계: ${filtered.length}건 · 투입 ${totalInputW.toFixed(2)}kg · 생산 ${totalOutputW.toFixed(2)}kg`;
+    if (totalInputW > 0) {
+      const totalYield = (totalOutputW / totalInputW * 100).toFixed(2);
+      html += ` · 종합수율 <b>${totalYield}%</b>`;
+    }
+    html += '</div>';
+    
+    area.innerHTML = html;
   }
   function editItemBtn(item){ openEditModal(item); }
 
+  // ============ 저장/수정/삭제 ============
   async function saveInput(){
     const inputProduct = document.getElementById('p_inputProduct').value.trim();
     if (!inputProduct) { showStatus2("🚨 투입 상품명은 필수입니다.", 'error'); return; }
@@ -528,7 +668,7 @@
     });
   }
 
-  // 계산기
+  // ============ 계산기 ============
   let calcInput="", calcTotalSum=0, calcItemCount=0, calcDetailList=[], calcPaperLog="";
   let calcBaseForMultiply=null, calcIsAutoDecimal=false;
   function openCalculator(target){
@@ -584,6 +724,171 @@
     closeCalculator();
     playBeep(false);
     updateYieldDisplay();
+  }
+
+  // ============ 일일마감일지 JPG 공유 ============
+  function buildReportHtml(){
+    const date = document.getElementById('targetDate').value;
+    const filtered = filterItems(currentItems);
+    
+    const dateObj = new Date(date);
+    const dayKor = ['일','월','화','수','목','금','토'][dateObj.getDay()];
+    const dateStr = `${dateObj.getFullYear()}. ${dateObj.getMonth()+1}. ${dateObj.getDate()}. ${dayKor}`;
+    
+    // 작성자 (정/부)
+    const writers = [...new Set(filtered.map(i => i.writer).filter(Boolean))];
+    const writerStr = writers.length > 0 ? writers.join(' / ') : '-';
+    
+    // 필터 표시
+    let filterLabel = '';
+    if (currentFilter === 'yuk') filterLabel = ' (육절기)';
+    else if (currentFilter === 'gol') filterLabel = ' (골절기)';
+    else if (currentFilter === 'am') filterLabel = ' (오전)';
+    else if (currentFilter === 'pm') filterLabel = ' (오후)';
+    
+    let totalIn = 0, totalOut = 0;
+    
+    // 오전/오후 분리
+    const amItems = filtered.filter(i => i.timeSlot === '오전');
+    const pmItems = filtered.filter(i => i.timeSlot === '오후');
+    
+    let rowsHtml = '';
+    
+    function renderSection(items, sectionLabel){
+      if (items.length === 0) return '';
+      let html = '';
+      items.forEach((item, idx) => {
+        const inBox = item.inputBoxCount || '-';
+        const inW = item.inputWeight ? Number(item.inputWeight).toFixed(2) : '-';
+        const outBox = item.outputBoxCount || '-';
+        const outW = item.outputWeight ? Number(item.outputWeight).toFixed(2) : '-';
+        const yieldStr = item.yieldPct ? Number(item.yieldPct).toFixed(2) + '%' : '-';
+        const mLabel = item.machine === '골절기' ? '골' : '육';
+        
+        if (item.inputWeight) totalIn += Number(item.inputWeight);
+        if (item.outputWeight) totalOut += Number(item.outputWeight);
+        
+        html += '<tr>';
+        if (idx === 0) {
+          html += `<td class="r-leftcol" rowspan="${items.length}">${sectionLabel}</td>`;
+        }
+        html += `<td>${mLabel}</td>`;
+        html += `<td style="text-align:left; padding-left:10px;">${escapeHtml(item.inputProduct)}${item.outputProduct && item.outputProduct !== item.inputProduct ? ' → ' + escapeHtml(item.outputProduct) : ''}</td>`;
+        html += `<td class="col-input">${inBox}박 / ${inW}</td>`;
+        html += `<td class="col-output">${outBox}박 / ${outW}</td>`;
+        html += `<td><b>${yieldStr}</b></td>`;
+        html += `<td style="text-align:left; font-size:12px;">${escapeHtml(item.memo || '')}</td>`;
+        html += '</tr>';
+      });
+      return html;
+    }
+    
+    rowsHtml += renderSection(amItems, '오전');
+    rowsHtml += renderSection(pmItems, '오후');
+    
+    if (rowsHtml === '') {
+      rowsHtml = '<tr><td colspan="7" style="padding:20px; color:#999;">등록된 생산 내역이 없습니다.</td></tr>';
+    }
+    
+    const totalYield = totalIn > 0 ? (totalOut / totalIn * 100).toFixed(2) + '%' : '-';
+    
+    return `
+      <div class="r-title">일 일 마 감 일 지${filterLabel}</div>
+      <div class="r-info">
+        <div class="r-info-cell label">정/부</div>
+        <div class="r-info-cell" style="flex:1;">${escapeHtml(writerStr)}</div>
+        <div class="r-info-cell label">날짜</div>
+        <div class="r-info-cell">${dateStr}</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:30px;">구분</th>
+            <th style="width:40px;">기계</th>
+            <th>품목</th>
+            <th class="col-input">투입 (박스/kg)</th>
+            <th class="col-output">생산 (박스/kg)</th>
+            <th style="width:60px;">수율</th>
+            <th>기타</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+        <tfoot>
+          <tr style="background:#f5f5f5; font-weight:bold;">
+            <td colspan="3" style="text-align:right; padding-right:10px;">합계</td>
+            <td class="col-input">${totalIn.toFixed(2)} kg</td>
+            <td class="col-output">${totalOut.toFixed(2)} kg</td>
+            <td>${totalYield}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+  }
+
+  async function shareAsImage(){
+    if (currentItems.length === 0) {
+      alert('등록된 생산 내역이 없습니다. 먼저 등록해주세요.');
+      return;
+    }
+    
+    const reportArea = document.getElementById('reportArea');
+    reportArea.innerHTML = buildReportHtml();
+    
+    showStatus2('⏳ 일일마감일지 이미지 생성 중...', 'processing');
+    
+    try {
+      // 잠깐 대기 (렌더링)
+      await new Promise(r => setTimeout(r, 300));
+      
+      const canvas = await html2canvas(reportArea, {
+        scale: 2,
+        backgroundColor: '#FFFFFF',
+        useCORS: true
+      });
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          showStatus2('❌ 이미지 생성 실패', 'error');
+          return;
+        }
+        
+        const date = document.getElementById('targetDate').value.replace(/-/g,'');
+        const fileName = `${date}_일일마감일지.jpg`;
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: '신화미트 일일마감일지',
+              text: `${date} 일일마감일지`
+            });
+            showStatus2('✅ 공유 완료!', 'success');
+            setTimeout(hideStatus2, 2000);
+          } catch(shareErr) {
+            if (shareErr.name !== 'AbortError') {
+              downloadImage(canvas, fileName);
+            } else {
+              hideStatus2();
+            }
+          }
+        } else {
+          downloadImage(canvas, fileName);
+        }
+      }, 'image/jpeg', 0.95);
+    } catch(err){
+      showStatus2('❌ 이미지 생성 실패: ' + err.message, 'error');
+    }
+  }
+  
+  function downloadImage(canvas, fileName){
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    link.click();
+    showStatus2('✅ 이미지 다운로드 완료!\n갤러리에서 카톡으로 공유하세요', 'success');
+    setTimeout(hideStatus2, 4000);
   }
 
   loadAutoComplete();
