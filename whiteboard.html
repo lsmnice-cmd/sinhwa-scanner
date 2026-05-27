@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>재고 화이트보드</title>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family:'Malgun Gothic',sans-serif; margin:0; padding:0; background:#F0F0F0; }
+  .header { background:#00ACC1; color:#fff; padding:14px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:50; }
+  .header .back { background:rgba(255,255,255,0.2); border:none; color:#fff; font-size:18px; padding:6px 12px; border-radius:6px; cursor:pointer; }
+  .header .title { font-size:18px; font-weight:bold; flex:1; text-align:center; }
+  .container { max-width:600px; margin:0 auto; padding:10px; padding-bottom:140px; }
+  .control-box { background:#fff; padding:12px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08); margin-bottom:10px; }
+  .control-box label { display:block; font-weight:bold; font-size:14px; margin-bottom:6px; color:#555; }
+  select, input[type="text"] { width:100%; padding:11px; font-size:16px; border:2px solid #ccc; border-radius:8px; background:#fff; }
+  .btn { color:#fff; border:none; padding:14px; width:100%; font-size:16px; font-weight:bold; border-radius:8px; cursor:pointer; }
+  .btn-clear { background:#E53935; margin-bottom:10px; }
+  .btn-save { background:#4CAF50; }
+  .btn-share { background:#2196F3; }
+  
+  /* 캡처 영역 */
+  .capture-area { background:#fff; padding:14px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+  .board-title { text-align:center; font-size:18px; font-weight:bold; margin-bottom:10px; color:#222; }
+  
+  /* 격자 */
+  .board { background:#BDBDBD; border-radius:8px; overflow:hidden; }
+  .row { display:flex; }
+  .cell { flex:1; padding:8px 4px; background:#fff; margin:1px; min-height:42px; display:flex; align-items:center; justify-content:center; font-size:13px; text-align:center; word-break:break-all; }
+  .cell.header { background:#D5D5D5; font-weight:bold; font-size:14px; }
+  .cell input { width:100%; height:100%; min-height:38px; border:none; text-align:center; font-size:13px; font-weight:bold; color:#E65100; background:transparent; outline:none; padding:4px; }
+  .cell input.name-input { color:#1565C0; font-size:12px; }
+  .cell input:focus { background:#FFF9C4; }
+  .cell.check { cursor:pointer; user-select:none; font-size:24px; color:#4CAF50; }
+  .cell.under-stock input { color:#C62828 !important; background:#FFCDD2 !important; }
+  
+  #status { position:fixed; bottom:160px; left:50%; transform:translateX(-50%); padding:12px 20px; border-radius:8px; font-weight:bold; display:none; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.2); white-space:pre-line; max-width:90%; }
+  .success { background:#E8F5E9; color:#2E7D32; }
+  .error { background:#FFEBEE; color:#C62828; }
+  .processing { background:#FFF3E0; color:#E65100; }
+  
+  .save-bar { position:fixed; bottom:0; left:0; right:0; background:#fff; padding:10px; box-shadow:0 -4px 12px rgba(0,0,0,0.1); z-index:50; }
+  .save-bar-inner { max-width:600px; margin:0 auto; display:flex; gap:8px; }
+  .save-bar-inner .btn { font-size:16px; padding:14px 0; }
+  
+  .empty { text-align:center; color:#999; padding:30px; }
+  .loading { text-align:center; color:#666; padding:30px; }
+  
+  /* 빠른입력 바 */
+  .quick-bar { position:fixed; bottom:70px; left:0; right:0; background:#424242; padding:5px; display:none; z-index:60; }
+  .quick-bar.show { display:flex; }
+  .quick-bar-inner { max-width:600px; margin:0 auto; display:flex; gap:4px; width:100%; }
+  .quick-btn { flex:1; padding:10px 0; font-size:14px; font-weight:bold; color:#fff; border:none; border-radius:6px; cursor:pointer; touch-action:manipulation; }
+  .qb-unit { background:#4CAF50; }
+  .qb-check { background:#2196F3; }
+  .qb-x { background:#9E9E9E; }
+  .qb-clear { background:#E53935; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="back" onclick="location.href='index.html'">← 뒤로</button>
+  <span class="title">🗂️ 재고 화이트보드</span>
+</div>
+
+<div class="container">
+
+  <div class="control-box">
+    <label>📋 양식 선택</label>
+    <select id="formSelect"></select>
+  </div>
+  
+  <button class="btn btn-clear" onclick="clearAllInputs()">🗑️ 현재 화면 입력값 모두 지우기</button>
+
+  <!-- 캡처될 영역 -->
+  <div id="captureArea" class="capture-area">
+    <div id="boardTitle" class="board-title">불러오는 중...</div>
+    <div id="boardArea"><div class="loading">📡 양식을 불러오는 중...</div></div>
+  </div>
+
+</div>
+
+<!-- 빠른입력 바 -->
+<div id="quickBar" class="quick-bar">
+  <div class="quick-bar-inner" id="quickBarInner"></div>
+</div>
+
+<div id="status"></div>
+
+<!-- 하단 고정 버튼 -->
+<div class="save-bar">
+  <div class="save-bar-inner">
+    <button class="btn btn-save" onclick="saveAll()" id="saveBtn">💾 시트 저장</button>
+    <button class="btn btn-share" onclick="shareAsImage()" id="shareBtn">📤 JPG 공유</button>
+  </div>
+</div>
+
+<script>
+  // ⚠️ 본인 앱스스크립트 URL!
+  const API_URL = "https://script.google.com/macros/s/AKfycbxbhb1tD_9zJslhTS7MInKo0t5F5VfwOJwM0hXFP6CkufQsstmVgFicBOpjV86NXz9i/exec";
+
+  let formMap = {};
+  let itemUnits = {};
+  let optimalQties = {};
+  let currentForm = "";
+  let allInputs = [];
+  let savedData = {};
+  let currentFocusedInput = null;
+
+  function showStatus(msg, type, duration){
+    const s = document.getElementById('status');
+    s.innerText = msg;
+    s.className = type;
+    s.style.display = 'block';
+    if (duration) setTimeout(()=>{ s.style.display = 'none'; }, duration);
+  }
+  function hideStatus(){ document.getElementById('status').style.display = 'none'; }
+  function vibrate(ms){ try { if (navigator.vibrate) navigator.vibrate(ms||30); } catch(e){} }
+  function escapeHtml(s){ if (s==null) return ''; return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ============ 양식 로드 ============
+  async function loadForms(){
+    try {
+      const res = await fetch(API_URL + "?action=getWhiteboardForm");
+      const data = await res.json();
+      
+      if (data.error) {
+        document.getElementById('boardArea').innerHTML = '<div class="empty">🚨 ' + data.error + '</div>';
+        return;
+      }
+      
+      formMap = data.forms || {};
+      itemUnits = data.itemUnits || {};
+      optimalQties = data.optimalQties || {};
+      
+      const formNames = Object.keys(formMap);
+      const select = document.getElementById('formSelect');
+      select.innerHTML = '';
+      
+      if (formNames.length === 0) {
+        document.getElementById('boardArea').innerHTML = '<div class="empty">양식이 없습니다.<br>구글시트 "화이트보드양식"에 양식을 추가하세요.</div>';
+        return;
+      }
+      
+      formNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.text = name;
+        select.appendChild(opt);
+      });
+      
+      select.addEventListener('change', () => {
+        saveCurrentInputs();
+        currentForm = select.value;
+        drawBoard();
+      });
+      
+      currentForm = formNames[0];
+      drawBoard();
+    } catch(err){
+      document.getElementById('boardArea').innerHTML = '<div class="empty">❌ 통신 오류: ' + err.message + '</div>';
+    }
+  }
+
+  function saveCurrentInputs(){
+    allInputs.forEach(info => {
+      const key = currentForm + "_" + info.r + "_" + info.c;
+      let val = "";
+      if (info.type === 'edit') val = info.view.value.trim();
+      else if (info.type === 'check') val = info.view.innerText === '✅' ? '✅' : '';
+      if (val) savedData[key] = val;
+      else delete savedData[key];
+    });
+  }
+
+  function isHeaderCell(boardData, rIdx, cIdx, text){
+    const t = (text || '').trim();
+    if (!t || t === '-') return false;
+    
+    const hdrKeys = ['상품명','수량','체크','업무 내용','품목','박스, 중량','기타 사항'];
+    if (hdrKeys.includes(t)) return true;
+    if (/현황|확인서|일일 마감|추진업무|재고현황|재고 파악|마감 재고|파악 재고|수시 파악|비고|특이사항|총계|합계|참고/.test(t)) return true;
+    
+    if (cIdx === 0) {
+      const row = boardData[rIdx];
+      let allEmpty = true;
+      for (let i = 1; i < row.length; i++) {
+        const nextText = (row[i].text || '').trim();
+        if (nextText && nextText !== '-') { allEmpty = false; break; }
+      }
+      if (allEmpty) return true;
+    }
+    
+    if (rIdx + 1 < boardData.length) {
+      const nextRow = boardData[rIdx + 1];
+      if (cIdx < nextRow.length) {
+        const textBelow = (nextRow[cIdx].text || '').trim();
+        if (['상품명','수량','체크'].includes(textBelow)) return true;
+      }
+    }
+    return false;
+  }
+
+  function drawBoard(){
+    const boardData = formMap[currentForm] || [];
+    const board = document.getElementById('boardArea');
+    const titleArea = document.getElementById('boardTitle');
+    
+    const worker = localStorage.getItem('shinhwa_worker') || '현장팀';
+    const today = new Date();
+    const dayKor = ['일','월','화','수','목','금','토'][today.getDay()];
+    const dateStr = `${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}(${dayKor})`;
+    titleArea.innerText = `📋 ${dateStr} ${currentForm} (${worker})`;
+    
+    if (boardData.length === 0) {
+      board.innerHTML = '<div class="empty">이 양식에는 데이터가 없습니다.</div>';
+      return;
+    }
+    
+    const isEditableBoard = currentForm.includes('원료육') || currentForm.includes('수정') || currentForm.includes('자율');
+    
+    const qtyCols = new Set();
+    const nameCols = new Set();
+    boardData.forEach(row => {
+      row.forEach((cell, j) => {
+        const txt = (cell.text || '').trim();
+        if (txt === '수량' || txt.includes('체크') || txt === '중량' || txt === '기타 사항') qtyCols.add(j);
+        if (txt === '상품명' || txt.includes('업무 내용') || txt === '품목') nameCols.add(j);
+      });
+    });
+    if (nameCols.size === 0) { nameCols.add(0); nameCols.add(2); }
+    if (qtyCols.size === 0) { qtyCols.add(1); qtyCols.add(3); }
+    
+    allInputs = [];
+    
+    const boardEl = document.createElement('div');
+    boardEl.className = 'board';
+    
+    boardData.forEach((row, i) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'row';
+      
+      let lastDynamicName = null;
+      let lastStaticName = null;
+      let j = 0;
+      
+      while (j < row.length) {
+        const cell = row[j];
+        const cellText = (cell.text || '').trim();
+        const r = cell.r;
+        const c = cell.c;
+        const isHeader = isHeaderCell(boardData, i, j, cellText);
+        const key = currentForm + "_" + r + "_" + c;
+        
+        let spanCount = 1;
+        if (isHeader || (!nameCols.has(j) && !qtyCols.has(j))) {
+          let nextIdx = j + 1;
+          while (nextIdx < row.length) {
+            const nt = (row[nextIdx].text || '').trim();
+            if (nt) break;
+            if (!isHeader && (qtyCols.has(nextIdx) || nameCols.has(nextIdx))) break;
+            spanCount++;
+            nextIdx++;
+          }
+        }
+        
+        let weight = 0;
+        for (let col = j; col < j + spanCount; col++) {
+          weight += nameCols.has(col) ? 1.3 : (qtyCols.has(col) ? 0.9 : 1.1);
+        }
+        
+        const cellEl = document.createElement('div');
+        cellEl.className = 'cell';
+        cellEl.style.flex = weight;
+        
+        if (cellText === '[체크]') {
+          const itemName = (lastDynamicName ? lastDynamicName.value.trim() : (lastStaticName || ''));
+          cellEl.className = 'cell check';
+          cellEl.innerText = (savedData[key] === '✅') ? '✅' : '⬜';
+          cellEl.addEventListener('click', () => {
+            vibrate(20);
+            cellEl.innerText = (cellEl.innerText === '⬜') ? '✅' : '⬜';
+            if (currentFocusedInput) currentFocusedInput.blur();
+          });
+          allInputs.push({ r, c, view: cellEl, type: 'check', itemName: itemName });
+          j++;
+        }
+        else if (nameCols.has(j) && !isHeader) {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'name-input';
+          
+          if (savedData[key]) {
+            input.value = savedData[key];
+          } else if (cellText && cellText !== '[입력]') {
+            input.value = cellText;
+            if (!isEditableBoard) {
+              input.readOnly = true;
+              input.style.background = '#EEEEEE';
+              input.style.color = '#000';
+            }
+          } else {
+            input.placeholder = '입력';
+          }
+          
+          cellEl.appendChild(input);
+          allInputs.push({ r, c, view: input, type: 'edit', itemName: '', isName: true });
+          lastDynamicName = input;
+          lastStaticName = null;
+          
+          input.addEventListener('focus', () => onFocusInput(input));
+          input.addEventListener('blur', () => { setTimeout(()=>hideQuickBar(), 200); });
+          j++;
+        }
+        else if (qtyCols.has(j) && !isHeader) {
+          const itemName = (lastDynamicName ? lastDynamicName.value.trim() : (lastStaticName || ''));
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = '입력';
+          
+          if (savedData[key]) input.value = savedData[key];
+          else if (cellText && cellText !== '[입력]') input.value = cellText;
+          
+          cellEl.appendChild(input);
+          allInputs.push({ r, c, view: input, type: 'edit', itemName: itemName, isQty: true });
+          
+          input.addEventListener('focus', () => onFocusInput(input, itemName));
+          input.addEventListener('blur', () => { setTimeout(()=>hideQuickBar(), 200); });
+          j++;
+        }
+        else {
+          cellEl.innerText = (cellText === '-') ? '' : cellText;
+          if (isHeader) cellEl.classList.add('header');
+          if (cellText && !isHeader) lastStaticName = cellText;
+          j += spanCount;
+        }
+        
+        rowEl.appendChild(cellEl);
+      }
+      
+      boardEl.appendChild(rowEl);
+    });
+    
+    board.innerHTML = '';
+    board.appendChild(boardEl);
+    
+    applyUnderStockWarning();
+  }
+
+  function applyUnderStockWarning(){
+    allInputs.forEach(info => {
+      if (info.type !== 'edit' || !info.isQty) return;
+      
+      let itemName = info.itemName;
+      if (!itemName) {
+        const nameInfo = allInputs.find(x => x.r === info.r && x.c === info.c - 1 && x.isName);
+        if (nameInfo) itemName = nameInfo.view.value.trim();
+      }
+      
+      const txt = info.view.value.trim().toUpperCase();
+      let currentQty = null;
+      if (txt === 'X') currentQty = 0;
+      else { const m = txt.match(/[0-9.]+/); if (m) currentQty = parseFloat(m[0]); }
+      
+      const optimal = optimalQties[itemName];
+      const parentCell = info.view.parentElement;
+      if (optimal !== undefined && currentQty !== null && currentQty < optimal) {
+        parentCell.classList.add('under-stock');
+      } else {
+        parentCell.classList.remove('under-stock');
+      }
+    });
+  }
+  
+  document.addEventListener('input', (e) => {
+    if (e.target.tagName === 'INPUT') applyUnderStockWarning();
+  });
+
+  // ============ 빠른입력 바 ============
+  function onFocusInput(input, itemName){
+    currentFocusedInput = input;
+    const targetUnit = (itemUnits[itemName] || '').toLowerCase();
+    
+    const bar = document.getElementById('quickBarInner');
+    bar.innerHTML = '';
+    
+    const units = ['박스','캔','팩','kg'];
+    units.forEach(u => {
+      if (targetUnit && targetUnit !== u.toLowerCase()) return;
+      const btn = document.createElement('button');
+      btn.className = 'quick-btn qb-unit';
+      btn.innerText = u;
+      btn.addEventListener('pointerdown', (e) => { e.preventDefault(); appendToInput(u); });
+      bar.appendChild(btn);
+    });
+    
+    const btnCheck = document.createElement('button');
+    btnCheck.className = 'quick-btn qb-check';
+    btnCheck.innerText = '✅';
+    btnCheck.addEventListener('pointerdown', (e) => { e.preventDefault(); input.value = '✅'; applyUnderStockWarning(); });
+    bar.appendChild(btnCheck);
+    
+    const btnX = document.createElement('button');
+    btnX.className = 'quick-btn qb-x';
+    btnX.innerText = 'X';
+    btnX.addEventListener('pointerdown', (e) => { e.preventDefault(); input.value = 'X'; applyUnderStockWarning(); });
+    bar.appendChild(btnX);
+    
+    const btnClear = document.createElement('button');
+    btnClear.className = 'quick-btn qb-clear';
+    btnClear.innerText = '지우기';
+    btnClear.addEventListener('pointerdown', (e) => { e.preventDefault(); input.value = ''; applyUnderStockWarning(); });
+    bar.appendChild(btnClear);
+    
+    document.getElementById('quickBar').classList.add('show');
+  }
+  function appendToInput(text){
+    if (!currentFocusedInput) return;
+    currentFocusedInput.value += text;
+    applyUnderStockWarning();
+  }
+  function hideQuickBar(){
+    document.getElementById('quickBar').classList.remove('show');
+  }
+
+  // ============ 전체 지우기 ============
+  function clearAllInputs(){
+    if (!confirm('현재 화면의 모든 입력값을 지우시겠습니까?')) return;
+    allInputs.forEach(info => {
+      if (info.isQty && info.type === 'edit') info.view.value = '';
+      else if (info.type === 'check') info.view.innerText = '⬜';
+    });
+    applyUnderStockWarning();
+    showStatus('🗑️ 입력값이 모두 지워졌습니다', 'success', 2000);
+  }
+
+  // ============ 저장 ============
+  async function saveAll(){
+    saveCurrentInputs();
+    if (currentFocusedInput) currentFocusedInput.blur();
+    
+    const records = [];
+    allInputs.forEach(info => {
+      let text = '';
+      if (info.type === 'edit') text = info.view.value.trim();
+      else if (info.type === 'check') text = info.view.innerText === '✅' ? '✅' : '';
+      
+      let itemName = info.itemName;
+      if (info.isQty && !itemName) {
+        const nameInfo = allInputs.find(x => x.r === info.r && x.c === info.c - 1 && x.isName);
+        if (nameInfo) itemName = nameInfo.view.value.trim();
+      }
+      
+      records.push({
+        r: info.r, c: info.c, text: text,
+        isQty: !!info.isQty, itemName: itemName || ''
+      });
+    });
+    
+    showStatus('⏳ 저장 중...', 'processing');
+    
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "saveWhiteboardData", records: records })
+      });
+      const data = await res.json();
+      
+      if (data.status === 'success') {
+        vibrate(100);
+        let msg = '✅ 저장 완료!';
+        if (data.underStocked && data.underStocked.length > 0) {
+          msg += '\n⚠️ 적정재고 미달: ' + data.underStocked.length + '개\n(' + data.underStocked.slice(0,3).join(', ') + (data.underStocked.length > 3 ? '...' : '') + ')';
+        }
+        showStatus(msg, 'success', 4000);
+      } else {
+        showStatus('🚨 ' + (data.msg || '저장 실패'), 'error', 4000);
+      }
+    } catch(err){
+      showStatus('❌ 통신 오류: ' + err.message, 'error', 4000);
+    }
+  }
+
+  // ============ JPG 공유 ============
+  async function shareAsImage(){
+    if (currentFocusedInput) currentFocusedInput.blur();
+    hideQuickBar();
+    showStatus('⏳ 이미지 생성 중...', 'processing');
+    
+    try {
+      // html2canvas로 캡처
+      const captureEl = document.getElementById('captureArea');
+      const canvas = await html2canvas(captureEl, {
+        scale: 2,
+        backgroundColor: '#FFFFFF',
+        useCORS: true
+      });
+      
+      // Blob으로 변환
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          showStatus('❌ 이미지 생성 실패', 'error', 3000);
+          return;
+        }
+        
+        const today = new Date();
+        const dateStr = today.getFullYear() + String(today.getMonth()+1).padStart(2,'0') + String(today.getDate()).padStart(2,'0');
+        const fileName = `${dateStr}_${currentForm}_재고판.jpg`;
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
+        
+        // Web Share API (모바일에서 카톡 등 앱 선택 가능)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: '신화미트 재고판',
+              text: `${currentForm} 재고 현황`
+            });
+            showStatus('✅ 공유 완료!', 'success', 2000);
+          } catch(shareErr) {
+            if (shareErr.name !== 'AbortError') {
+              // 공유 실패 시 다운로드 폴백
+              downloadImage(canvas, fileName);
+            } else {
+              hideStatus();
+            }
+          }
+        } else {
+          // 공유 API 없으면 다운로드
+          downloadImage(canvas, fileName);
+        }
+      }, 'image/jpeg', 0.95);
+    } catch(err){
+      showStatus('❌ 이미지 생성 실패: ' + err.message, 'error', 4000);
+    }
+  }
+  
+  function downloadImage(canvas, fileName){
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    link.click();
+    showStatus('✅ 이미지 다운로드 완료!\n갤러리에서 카톡으로 공유하세요', 'success', 4000);
+  }
+
+  // 초기 실행
+  loadForms();
+</script>
+</body>
+</html>
