@@ -49,7 +49,7 @@
   .ac-item:active { background:#F3E5F5; }
   .ac-hint { padding:10px; text-align:center; color:#999; font-size:13px; background:#FAFAFA; }
   
-  /* ★ 정렬 필터 버튼 */
+  /* 정렬 필터 버튼 */
   .filter-bar { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
   .filter-btn { 
     padding:8px 14px; font-size:13px; font-weight:bold; 
@@ -58,7 +58,7 @@
   }
   .filter-btn.active { background:#9C27B0; color:#fff; }
   
-  /* ★ 목록 = 표 형태 */
+  /* 목록 = 표 형태 */
   .list-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; background:#fff; }
   .list-table th { 
     background:#F3E5F5; color:#4A148C; padding:8px 4px; 
@@ -122,7 +122,7 @@
   .ck-send { background:#4CAF50; font-size:17px; }
   .calc-btn:active { transform:scale(0.95); }
   
-  /* ★ 일일마감일지 캡처용 (숨겨진 영역) */
+  /* 일일마감일지 캡처용 (숨겨진 영역) */
   .report-area {
     position:fixed; left:-9999px; top:0;
     width:800px; background:#fff; padding:20px;
@@ -166,7 +166,7 @@
 
 <div class="container">
 
-  <!-- ★ 공유 버튼 (작업 날짜 위) -->
+  <!-- 공유 버튼 (작업 날짜 위) -->
   <button class="btn btn-share" onclick="shareAsImage()">📤 일일마감일지 카톡으로 공유</button>
 
   <div class="box">
@@ -179,7 +179,7 @@
   <div class="box" style="margin-top:14px;">
     <label class="block">📋 선택 날짜의 생산 목록</label>
     
-    <!-- ★ 정렬 필터 -->
+    <!-- 정렬 필터 -->
     <div class="filter-bar">
       <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">전체</button>
       <button class="filter-btn" data-filter="yuk" onclick="setFilter('yuk', this)">육절기</button>
@@ -195,6 +195,27 @@
 
 <!-- 숨겨진 일일마감일지 캡처 영역 -->
 <div id="reportArea" class="report-area"></div>
+
+<!-- 일지 종류 선택 팝업 -->
+<div id="shareSelectModal" class="modal-overlay">
+  <div class="modal-content" style="max-width:420px;">
+    <div class="modal-header">
+      <span class="title">📤 어떤 일지로 공유할까요?</span>
+      <button class="modal-close" onclick="closeShareSelect()">✕</button>
+    </div>
+    <div class="box">
+      <button class="btn" style="background:#E91E63; padding:18px; font-size:17px; margin-bottom:10px;" onclick="doShare('yuk')">
+        🥩 육절기 일일마감일지 <span style="font-size:13px; opacity:0.9;">(<span id="shareYukCount">0건</span>)</span>
+      </button>
+      <button class="btn" style="background:#FF5722; padding:18px; font-size:17px; margin-bottom:10px;" onclick="doShare('gol')">
+        🦴 골절기 일일마감일지 <span style="font-size:13px; opacity:0.9;">(<span id="shareGolCount">0건</span>)</span>
+      </button>
+      <button class="btn" style="background:#607D8B; padding:18px; font-size:17px;" onclick="doShare('all')">
+        📋 전체 일일마감일지 <span style="font-size:13px; opacity:0.9;">(<span id="shareAllCount">0건</span>)</span>
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- 생산 입력 모달 -->
 <div id="inputModal" class="modal-overlay">
@@ -418,7 +439,7 @@
     }
   }
 
-  // ★ 정렬 필터
+  // 정렬 필터
   function setFilter(filter, btn){
     currentFilter = filter;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -437,7 +458,7 @@
     });
   }
 
-  // ★ 표(테이블) 형태로 렌더
+  // 표(테이블) 형태로 렌더
   function renderList(){
     const area = document.getElementById('listArea');
     const filtered = filterItems(currentItems);
@@ -726,119 +747,35 @@
     updateYieldDisplay();
   }
 
-  // ============ 일일마감일지 JPG 공유 ============
-  function buildReportHtml(){
-    const date = document.getElementById('targetDate').value;
-    const filtered = filterItems(currentItems);
-    
-    const dateObj = new Date(date);
-    const dayKor = ['일','월','화','수','목','금','토'][dateObj.getDay()];
-    const dateStr = `${dateObj.getFullYear()}. ${dateObj.getMonth()+1}. ${dateObj.getDate()}. ${dayKor}`;
-    
-    // 작성자 (정/부)
-    const writers = [...new Set(filtered.map(i => i.writer).filter(Boolean))];
-    const writerStr = writers.length > 0 ? writers.join(' / ') : '-';
-    
-    // 필터 표시
-    let filterLabel = '';
-    if (currentFilter === 'yuk') filterLabel = ' (육절기)';
-    else if (currentFilter === 'gol') filterLabel = ' (골절기)';
-    else if (currentFilter === 'am') filterLabel = ' (오전)';
-    else if (currentFilter === 'pm') filterLabel = ' (오후)';
-    
-    let totalIn = 0, totalOut = 0;
-    
-    // 오전/오후 분리
-    const amItems = filtered.filter(i => i.timeSlot === '오전');
-    const pmItems = filtered.filter(i => i.timeSlot === '오후');
-    
-    let rowsHtml = '';
-    
-    function renderSection(items, sectionLabel){
-      if (items.length === 0) return '';
-      let html = '';
-      items.forEach((item, idx) => {
-        const inBox = item.inputBoxCount || '-';
-        const inW = item.inputWeight ? Number(item.inputWeight).toFixed(2) : '-';
-        const outBox = item.outputBoxCount || '-';
-        const outW = item.outputWeight ? Number(item.outputWeight).toFixed(2) : '-';
-        const yieldStr = item.yieldPct ? Number(item.yieldPct).toFixed(2) + '%' : '-';
-        const mLabel = item.machine === '골절기' ? '골' : '육';
-        
-        if (item.inputWeight) totalIn += Number(item.inputWeight);
-        if (item.outputWeight) totalOut += Number(item.outputWeight);
-        
-        html += '<tr>';
-        if (idx === 0) {
-          html += `<td class="r-leftcol" rowspan="${items.length}">${sectionLabel}</td>`;
-        }
-        html += `<td>${mLabel}</td>`;
-        html += `<td style="text-align:left; padding-left:10px;">${escapeHtml(item.inputProduct)}${item.outputProduct && item.outputProduct !== item.inputProduct ? ' → ' + escapeHtml(item.outputProduct) : ''}</td>`;
-        html += `<td class="col-input">${inBox}박 / ${inW}</td>`;
-        html += `<td class="col-output">${outBox}박 / ${outW}</td>`;
-        html += `<td><b>${yieldStr}</b></td>`;
-        html += `<td style="text-align:left; font-size:12px;">${escapeHtml(item.memo || '')}</td>`;
-        html += '</tr>';
-      });
-      return html;
-    }
-    
-    rowsHtml += renderSection(amItems, '오전');
-    rowsHtml += renderSection(pmItems, '오후');
-    
-    if (rowsHtml === '') {
-      rowsHtml = '<tr><td colspan="7" style="padding:20px; color:#999;">등록된 생산 내역이 없습니다.</td></tr>';
-    }
-    
-    const totalYield = totalIn > 0 ? (totalOut / totalIn * 100).toFixed(2) + '%' : '-';
-    
-    return `
-      <div class="r-title">일 일 마 감 일 지${filterLabel}</div>
-      <div class="r-info">
-        <div class="r-info-cell label">정/부</div>
-        <div class="r-info-cell" style="flex:1;">${escapeHtml(writerStr)}</div>
-        <div class="r-info-cell label">날짜</div>
-        <div class="r-info-cell">${dateStr}</div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:30px;">구분</th>
-            <th style="width:40px;">기계</th>
-            <th>품목</th>
-            <th class="col-input">투입 (박스/kg)</th>
-            <th class="col-output">생산 (박스/kg)</th>
-            <th style="width:60px;">수율</th>
-            <th>기타</th>
-          </tr>
-        </thead>
-        <tbody>${rowsHtml}</tbody>
-        <tfoot>
-          <tr style="background:#f5f5f5; font-weight:bold;">
-            <td colspan="3" style="text-align:right; padding-right:10px;">합계</td>
-            <td class="col-input">${totalIn.toFixed(2)} kg</td>
-            <td class="col-output">${totalOut.toFixed(2)} kg</td>
-            <td>${totalYield}</td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>
-    `;
-  }
-
-  async function shareAsImage(){
+  // ============ 일일마감일지 JPG 공유 (육절기/골절기 선택) ============
+  function shareAsImage(){
     if (currentItems.length === 0) {
       alert('등록된 생산 내역이 없습니다. 먼저 등록해주세요.');
       return;
     }
     
+    const yukCount = currentItems.filter(i => i.machine === '육절기').length;
+    const golCount = currentItems.filter(i => i.machine === '골절기').length;
+    
+    document.getElementById('shareYukCount').innerText = yukCount + '건';
+    document.getElementById('shareGolCount').innerText = golCount + '건';
+    document.getElementById('shareAllCount').innerText = currentItems.length + '건';
+    document.getElementById('shareSelectModal').classList.add('active');
+  }
+  
+  function closeShareSelect(){
+    document.getElementById('shareSelectModal').classList.remove('active');
+  }
+  
+  async function doShare(reportFilter){
+    closeShareSelect();
+    
     const reportArea = document.getElementById('reportArea');
-    reportArea.innerHTML = buildReportHtml();
+    reportArea.innerHTML = buildReportHtml(reportFilter);
     
     showStatus2('⏳ 일일마감일지 이미지 생성 중...', 'processing');
     
     try {
-      // 잠깐 대기 (렌더링)
       await new Promise(r => setTimeout(r, 300));
       
       const canvas = await html2canvas(reportArea, {
@@ -854,7 +791,10 @@
         }
         
         const date = document.getElementById('targetDate').value.replace(/-/g,'');
-        const fileName = `${date}_일일마감일지.jpg`;
+        let fileLabel = '일일마감일지';
+        if (reportFilter === 'yuk') fileLabel = '육절기_일일마감일지';
+        else if (reportFilter === 'gol') fileLabel = '골절기_일일마감일지';
+        const fileName = `${date}_${fileLabel}.jpg`;
         const file = new File([blob], fileName, { type: 'image/jpeg' });
         
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -862,7 +802,7 @@
             await navigator.share({
               files: [file],
               title: '신화미트 일일마감일지',
-              text: `${date} 일일마감일지`
+              text: `${date} ${fileLabel}`
             });
             showStatus2('✅ 공유 완료!', 'success');
             setTimeout(hideStatus2, 2000);
@@ -889,6 +829,117 @@
     link.click();
     showStatus2('✅ 이미지 다운로드 완료!\n갤러리에서 카톡으로 공유하세요', 'success');
     setTimeout(hideStatus2, 4000);
+  }
+
+  // ============ 일일마감일지 HTML 만들기 ============
+  function buildReportHtml(reportFilter){
+    const date = document.getElementById('targetDate').value;
+    
+    let filtered = currentItems;
+    let machineLabel = '';
+    if (reportFilter === 'yuk') {
+      filtered = currentItems.filter(i => i.machine === '육절기');
+      machineLabel = ' (육절기)';
+    } else if (reportFilter === 'gol') {
+      filtered = currentItems.filter(i => i.machine === '골절기');
+      machineLabel = ' (골절기)';
+    }
+    
+    const dateObj = new Date(date);
+    const dayKor = ['일','월','화','수','목','금','토'][dateObj.getDay()];
+    const dateStr = `${dateObj.getFullYear()}. ${dateObj.getMonth()+1}. ${dateObj.getDate()}. ${dayKor}`;
+    
+    // 작성자 (정/부)
+    const writers = [...new Set(filtered.map(i => i.writer).filter(Boolean))];
+    const writerStr = writers.length > 0 ? writers.join(' / ') : '-';
+    
+    let totalIn = 0, totalOut = 0;
+    
+    // 오전/오후 분리
+    const amItems = filtered.filter(i => i.timeSlot === '오전');
+    const pmItems = filtered.filter(i => i.timeSlot === '오후');
+    
+    let rowsHtml = '';
+    const showMachineCol = (reportFilter !== 'yuk' && reportFilter !== 'gol');
+    
+    function renderSection(items, sectionLabel){
+      if (items.length === 0) return '';
+      let html = '';
+      items.forEach((item, idx) => {
+        const inBox = item.inputBoxCount || '-';
+        const inW = item.inputWeight ? Number(item.inputWeight).toFixed(2) : '-';
+        const outBox = item.outputBoxCount || '-';
+        const outW = item.outputWeight ? Number(item.outputWeight).toFixed(2) : '-';
+        const yieldStr = item.yieldPct ? Number(item.yieldPct).toFixed(2) + '%' : '-';
+        const mLabel = item.machine === '골절기' ? '골' : '육';
+        
+        if (item.inputWeight) totalIn += Number(item.inputWeight);
+        if (item.outputWeight) totalOut += Number(item.outputWeight);
+        
+        html += '<tr>';
+        if (idx === 0) {
+          html += `<td class="r-leftcol" rowspan="${items.length}">${sectionLabel}</td>`;
+        }
+        if (showMachineCol) {
+          html += `<td>${mLabel}</td>`;
+        }
+        html += `<td style="text-align:left; padding-left:10px;">${escapeHtml(item.inputProduct)}${item.outputProduct && item.outputProduct !== item.inputProduct ? ' → ' + escapeHtml(item.outputProduct) : ''}</td>`;
+        html += `<td class="col-input">${inBox}박 / ${inW}</td>`;
+        html += `<td class="col-output">${outBox}박 / ${outW}</td>`;
+        html += `<td><b>${yieldStr}</b></td>`;
+        html += `<td style="text-align:left; font-size:12px;">${escapeHtml(item.memo || '')}</td>`;
+        html += '</tr>';
+      });
+      return html;
+    }
+    
+    rowsHtml += renderSection(amItems, '오전');
+    rowsHtml += renderSection(pmItems, '오후');
+    
+    const colspanForEmpty = showMachineCol ? 7 : 6;
+    if (rowsHtml === '') {
+      rowsHtml = `<tr><td colspan="${colspanForEmpty}" style="padding:20px; color:#999;">등록된 생산 내역이 없습니다.</td></tr>`;
+    }
+    
+    const totalYield = totalIn > 0 ? (totalOut / totalIn * 100).toFixed(2) + '%' : '-';
+    const totalColspan = showMachineCol ? 3 : 2;
+    
+    let headerHtml = `
+      <tr>
+        <th style="width:30px;">구분</th>`;
+    if (showMachineCol) {
+      headerHtml += `<th style="width:40px;">기계</th>`;
+    }
+    headerHtml += `
+        <th>품목</th>
+        <th class="col-input">투입 (박스/kg)</th>
+        <th class="col-output">생산 (박스/kg)</th>
+        <th style="width:60px;">수율</th>
+        <th>기타</th>
+      </tr>`;
+    
+    return `
+      <div class="r-title">일 일 마 감 일 지${machineLabel}</div>
+      <div class="r-info">
+        <div class="r-info-cell label">정/부</div>
+        <div class="r-info-cell" style="flex:1;">${escapeHtml(writerStr)}</div>
+        <div class="r-info-cell label">날짜</div>
+        <div class="r-info-cell">${dateStr}</div>
+      </div>
+      <table>
+        <thead>${headerHtml}</thead>
+        <tbody>${rowsHtml}</tbody>
+        <tfoot>
+          <tr style="background:#f5f5f5; font-weight:bold;">
+            <td colspan="${totalColspan}" style="text-align:right; padding-right:10px;">합계</td>
+            <td class="col-input">${totalIn.toFixed(2)} kg</td>
+            <td class="col-output">${totalOut.toFixed(2)} kg</td>
+            <td>${totalYield}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
   }
 
   loadAutoComplete();
