@@ -91,6 +91,16 @@
     margin-top:8px; font-size:13px; color:#4A148C; text-align:center;
   }
   
+  /* 부족 재고 팝업 */
+  .us-item { 
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 14px; margin-bottom:8px; background:#FFEBEE; 
+    border-left:5px solid #E53935; border-radius:8px; 
+  }
+  .us-item .us-name { font-weight:bold; font-size:15px; color:#C62828; }
+  .us-item .us-qty { font-size:13px; color:#666; }
+  .us-empty { text-align:center; color:#2E7D32; padding:20px; font-weight:bold; }
+  
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; overflow-y:auto; padding:14px; }
   .modal-overlay.active { display:block; }
   .modal-content { background:#f0f2f5; max-width:520px; margin:0 auto; border-radius:12px; padding:14px; }
@@ -195,6 +205,21 @@
 
 <!-- 숨겨진 일일마감일지 캡처 영역 -->
 <div id="reportArea" class="report-area"></div>
+
+<!-- 부족 재고 자동 팝업 -->
+<div id="underStockModal" class="modal-overlay">
+  <div class="modal-content" style="max-width:460px;">
+    <div class="modal-header">
+      <span class="title" style="color:#C62828;">🔴 부족 재고 알림</span>
+      <button class="modal-close" onclick="closeUnderStock()">✕</button>
+    </div>
+    <div class="box">
+      <p style="font-size:14px; color:#555; margin:0 0 12px;">아래 품목들이 <b style="color:#C62828;">적정재고 미달</b> 상태입니다. 생산을 우선 검토해주세요.</p>
+      <div id="underStockList"></div>
+      <button class="btn" style="background:#9C27B0; padding:16px; font-size:16px; margin-top:12px;" onclick="closeUnderStock()">확인했습니다 ✅</button>
+    </div>
+  </div>
+</div>
 
 <!-- 일지 종류 선택 팝업 -->
 <div id="shareSelectModal" class="modal-overlay">
@@ -345,7 +370,7 @@
   let html5QrCode2 = null;
   let editingRowNum = null;
   let calcTargetField = 'input';
-  let currentItems = []; // 현재 날짜의 모든 항목
+  let currentItems = [];
   let currentFilter = 'all';
   const savedWorker = localStorage.getItem('shinhwa_worker') || '';
 
@@ -517,7 +542,6 @@
     
     html += '</tbody></table>';
     
-    // 요약
     html += `<div class="summary">📊 합계: ${filtered.length}건 · 투입 ${totalInputW.toFixed(2)}kg · 생산 ${totalOutputW.toFixed(2)}kg`;
     if (totalInputW > 0) {
       const totalYield = (totalOutputW / totalInputW * 100).toFixed(2);
@@ -747,6 +771,35 @@
     updateYieldDisplay();
   }
 
+  // ============ 부족 재고 자동 팝업 ============
+  async function loadUnderStocked(){
+    try {
+      const res = await fetch(API_URL + "?action=getUnderStocked");
+      const data = await res.json();
+      const items = data.items || [];
+      
+      if (items.length === 0) return; // 미달 없으면 팝업 안 띄움
+      
+      const listEl = document.getElementById('underStockList');
+      let html = '';
+      items.forEach(it => {
+        const unit = it.unit || '';
+        html += `<div class="us-item">
+          <span class="us-name">⚠️ ${escapeHtml(it.name)}</span>
+          <span class="us-qty">현재 <b style="color:#C62828;">${it.current}${unit}</b> / 적정 ${it.optimal}${unit}</span>
+        </div>`;
+      });
+      listEl.innerHTML = html;
+      
+      document.getElementById('underStockModal').classList.add('active');
+    } catch(err){
+      console.log("부족 재고 조회 실패:", err);
+    }
+  }
+  function closeUnderStock(){
+    document.getElementById('underStockModal').classList.remove('active');
+  }
+
   // ============ 일일마감일지 JPG 공유 (육절기/골절기 선택) ============
   function shareAsImage(){
     if (currentItems.length === 0) {
@@ -849,13 +902,11 @@
     const dayKor = ['일','월','화','수','목','금','토'][dateObj.getDay()];
     const dateStr = `${dateObj.getFullYear()}. ${dateObj.getMonth()+1}. ${dateObj.getDate()}. ${dayKor}`;
     
-    // 작성자 (정/부)
     const writers = [...new Set(filtered.map(i => i.writer).filter(Boolean))];
     const writerStr = writers.length > 0 ? writers.join(' / ') : '-';
     
     let totalIn = 0, totalOut = 0;
     
-    // 오전/오후 분리
     const amItems = filtered.filter(i => i.timeSlot === '오전');
     const pmItems = filtered.filter(i => i.timeSlot === '오후');
     
@@ -944,6 +995,7 @@
 
   loadAutoComplete();
   loadList();
+  loadUnderStocked(); // ★ 페이지 열면 부족 재고 자동 확인
 </script>
 </body>
 </html>
