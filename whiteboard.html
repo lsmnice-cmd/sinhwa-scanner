@@ -27,10 +27,12 @@
   /* 격자 */
   .board { background:#BDBDBD; border-radius:8px; overflow:hidden; }
   .row { display:flex; }
-  .cell { flex:1; padding:8px 4px; background:#fff; margin:1px; min-height:42px; display:flex; align-items:center; justify-content:center; font-size:13px; text-align:center; word-break:break-all; }
+  .cell { flex:1; padding:8px 3px; background:#fff; margin:1px; min-height:42px; display:flex; align-items:center; justify-content:center; font-size:12px; text-align:center; word-break:keep-all; overflow:visible; line-height:1.25; }
   .cell.header { background:#D5D5D5; font-weight:bold; font-size:14px; }
-  .cell input { width:100%; height:100%; min-height:38px; border:none; text-align:center; font-size:13px; font-weight:bold; color:#E65100; background:transparent; outline:none; padding:4px; }
-  .cell input.name-input { color:#1565C0; font-size:12px; }
+  .cell input { width:100%; height:100%; min-height:38px; border:none; text-align:center; font-size:12px; font-weight:bold; color:#E65100; background:transparent; outline:none; padding:2px; text-overflow:clip; }
+  .cell input.name-input { color:#1565C0; font-size:11px; }
+  /* 캡처 시 품목명 잘림 방지 */
+  .cell .name-static { color:#1565C0; font-size:11px; font-weight:bold; line-height:1.2; word-break:keep-all; white-space:normal; width:100%; text-align:center; }
   .cell input:focus { background:#FFF9C4; }
   .cell.check { cursor:pointer; user-select:none; font-size:24px; color:#4CAF50; }
   .cell.under-stock input { color:#C62828 !important; background:#FFCDD2 !important; }
