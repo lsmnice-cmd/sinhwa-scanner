@@ -14,8 +14,6 @@
   .header .title { font-size:18px; font-weight:bold; flex:1; text-align:center; }
   .container { max-width:680px; margin:0 auto; padding:14px; }
   .box { background:#fff; padding:14px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.08); margin-bottom:12px; }
-  .row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-  .row label { font-weight:bold; min-width:55px; font-size:14px; }
   label.block { display:block; font-weight:bold; font-size:14px; margin:10px 0 4px; color:#333; }
   input[type="text"], input[type="number"], input[type="date"] { width:100%; padding:11px; font-size:16px; border:2px solid #ccc; border-radius:8px; }
   textarea { width:100%; padding:11px; font-size:14px; border:2px solid #ccc; border-radius:8px; min-height:60px; }
@@ -24,11 +22,13 @@
   .btn-stop { background:#E53935; display:none; }
   .btn-save { background:#2196F3; padding:16px; font-size:18px; }
   .btn-small { padding:10px; font-size:14px; width:auto; flex-shrink:0; }
-  .btn-calc { background:#4CAF50; padding:16px; font-size:17px; }
+  .btn-calc { background:#4CAF50; padding:13px; font-size:14px; }
   .btn-add { background:#9C27B0; padding:18px; font-size:18px; }
   .btn-share { background:#FF9800; padding:16px; font-size:17px; }
   .btn-edit { background:#1a73e8; padding:6px 10px; font-size:12px; width:auto; }
   .btn-delete { background:#E53935; padding:8px 14px; font-size:13px; width:auto; }
+  .btn-add-card { background:#fff; color:#9C27B0; border:2px dashed #9C27B0; padding:14px; font-size:15px; font-weight:bold; border-radius:10px; width:100%; cursor:pointer; margin-top:8px; }
+  .btn-add-card:active { background:#F3E5F5; }
   #status2 { margin-top:10px; padding:12px; border-radius:8px; font-weight:bold; text-align:center; font-size:15px; white-space:pre-line; display:none; }
   .success { background:#E8F5E9; color:#2E7D32; }
   .error { background:#FFEBEE; color:#C62828; }
@@ -40,6 +40,30 @@
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .hint { font-size:12px; color:#888; margin-top:3px; }
   
+  /* ★ 투입/생산 카드 */
+  .io-card { 
+    background:#FAFAFA; border:2px solid #E0E0E0; border-radius:10px;
+    padding:12px; margin-bottom:10px; position:relative;
+  }
+  .io-card.input-card { border-left:5px solid #FF9800; }
+  .io-card.output-card { border-left:5px solid #2E7D32; }
+  .io-card-header { 
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:8px;
+  }
+  .io-card-title { font-weight:bold; font-size:14px; color:#333; }
+  .io-card-title.input { color:#E65100; }
+  .io-card-title.output { color:#2E7D32; }
+  .io-card-del {
+    background:#E53935; color:#fff; border:none; padding:4px 10px;
+    border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;
+  }
+  .io-summary {
+    background:#FFF3E0; padding:8px 12px; border-radius:6px;
+    font-size:13px; font-weight:bold; color:#E65100; margin-top:4px;
+  }
+  .io-summary.output { background:#E8F5E9; color:#2E7D32; }
+  
   /* 자동완성 */
   .ac-wrap { position:relative; }
   .ac-list { display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:2px solid #9C27B0; border-radius:8px; max-height:240px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.15); margin-top:2px; }
@@ -49,7 +73,7 @@
   .ac-item:active { background:#F3E5F5; }
   .ac-hint { padding:10px; text-align:center; color:#999; font-size:13px; background:#FAFAFA; }
   
-  /* 정렬 필터 버튼 */
+  /* 정렬 필터 */
   .filter-bar { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
   .filter-btn { 
     padding:8px 14px; font-size:13px; font-weight:bold; 
@@ -58,7 +82,7 @@
   }
   .filter-btn.active { background:#9C27B0; color:#fff; }
   
-  /* 목록 = 표 형태 */
+  /* 목록 = 표 */
   .list-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; background:#fff; }
   .list-table th { 
     background:#F3E5F5; color:#4A148C; padding:8px 4px; 
@@ -71,7 +95,6 @@
     word-break:break-word;
   }
   .list-table tr:nth-child(even) { background:#FAFAFA; }
-  .list-table tr:hover { background:#F3E5F5; }
   .list-table .col-num { width:30px; background:#9C27B0; color:#fff; font-weight:bold; }
   .list-table .col-product { text-align:left; font-weight:bold; }
   .list-table .col-yield { font-weight:bold; }
@@ -85,13 +108,13 @@
   .tag-gol { background:#FFCCBC; color:#BF360C; }
   .tag-am { background:#FFE0B2; color:#E65100; }
   .tag-pm { background:#C8E6C9; color:#1B5E20; }
+  .tag-multi { background:#FFD54F; color:#E65100; padding:1px 5px; border-radius:3px; font-size:9px; }
   .empty-msg { text-align:center; color:#999; padding:20px; font-size:14px; }
   .summary { 
     background:#F3E5F5; padding:10px; border-radius:8px; 
     margin-top:8px; font-size:13px; color:#4A148C; text-align:center;
   }
   
-  /* 부족 재고 팝업 */
   .us-item { 
     display:flex; justify-content:space-between; align-items:center;
     padding:12px 14px; margin-bottom:8px; background:#FFEBEE; 
@@ -99,7 +122,6 @@
   }
   .us-item .us-name { font-weight:bold; font-size:15px; color:#C62828; }
   .us-item .us-qty { font-size:13px; color:#666; }
-  .us-empty { text-align:center; color:#2E7D32; padding:20px; font-weight:bold; }
   
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; overflow-y:auto; padding:14px; }
   .modal-overlay.active { display:block; }
@@ -108,17 +130,13 @@
   .modal-header .title { font-size:18px; font-weight:bold; color:#333; }
   .modal-close { background:#E53935; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:bold; }
   
-  /* ★ 바코드 스캔 영역 개선 */
+  /* 바코드 스캔 */
   .scan-wrap { position:relative; margin-top:8px; display:none; }
   .scan-wrap.show { display:block; }
   #reader2 { width:100%; border-radius:10px; overflow:hidden; background:#000; }
   #reader2 video { width:100% !important; height:280px !important; object-fit:cover !important; }
   
-  /* 그리드 가이드 (바코드 정확한 위치 안내) */
-  .scan-guide {
-    position:absolute; top:0; left:0; right:0; bottom:0; 
-    pointer-events:none; border-radius:10px; overflow:hidden;
-  }
+  .scan-guide { position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; border-radius:10px; overflow:hidden; }
   .scan-guide::before {
     content:""; position:absolute; top:50%; left:50%; 
     transform:translate(-50%, -50%);
@@ -141,21 +159,13 @@
   .scan-hint {
     position:absolute; top:8px; left:0; right:0; text-align:center;
     color:#fff; font-size:12px; font-weight:bold;
-    text-shadow:0 1px 3px rgba(0,0,0,0.8);
-    z-index:2; pointer-events:none;
+    text-shadow:0 1px 3px rgba(0,0,0,0.8); z-index:2; pointer-events:none;
   }
-  .scan-ctrl {
-    position:absolute; bottom:10px; left:0; right:0;
-    display:flex; gap:8px; justify-content:center; padding:0 12px;
-    z-index:3;
-  }
-  .scan-ctrl-btn {
-    background:rgba(0,0,0,0.6); color:#fff; border:1px solid #fff;
-    padding:8px 14px; border-radius:20px; font-size:13px; font-weight:bold;
-    cursor:pointer; backdrop-filter:blur(4px);
-  }
+  .scan-ctrl { position:absolute; bottom:10px; left:0; right:0; display:flex; gap:8px; justify-content:center; padding:0 12px; z-index:3; }
+  .scan-ctrl-btn { background:rgba(0,0,0,0.6); color:#fff; border:1px solid #fff; padding:8px 14px; border-radius:20px; font-size:13px; font-weight:bold; cursor:pointer; backdrop-filter:blur(4px); }
   .scan-ctrl-btn.active { background:#FFB300; color:#000; }
   
+  /* 계산기 */
   .calc-modal { display:none; position:fixed; inset:0; background:#263238; z-index:9999; flex-direction:column; }
   .calc-modal.active { display:flex; }
   .calc-header { background:#9C27B0; color:#fff; padding:12px; display:flex; justify-content:space-between; align-items:center; }
@@ -177,39 +187,18 @@
   .ck-send { background:#4CAF50; font-size:17px; }
   .calc-btn:active { transform:scale(0.95); }
   
-  /* 일일마감일지 캡처용 (숨겨진 영역) */
-  .report-area {
-    position:fixed; left:-9999px; top:0;
-    width:800px; background:#fff; padding:20px;
-    font-family:'Malgun Gothic',sans-serif;
-  }
-  .report-area .r-title {
-    text-align:center; font-size:28px; font-weight:bold;
-    padding:16px; border:2px solid #000; margin-bottom:14px;
-  }
-  .report-area .r-info {
-    display:flex; gap:8px; margin-bottom:12px; font-size:14px;
-  }
-  .report-area .r-info-cell {
-    border:1px solid #000; padding:8px 12px;
-  }
+  /* 일일마감일지 캡처용 */
+  .report-area { position:fixed; left:-9999px; top:0; width:900px; background:#fff; padding:20px; font-family:'Malgun Gothic',sans-serif; }
+  .report-area .r-title { text-align:center; font-size:28px; font-weight:bold; padding:16px; border:2px solid #000; margin-bottom:14px; }
+  .report-area .r-info { display:flex; gap:8px; margin-bottom:12px; font-size:14px; }
+  .report-area .r-info-cell { border:1px solid #000; padding:8px 12px; }
   .report-area .r-info-cell.label { background:#f5f5f5; font-weight:bold; min-width:50px; text-align:center; }
-  .report-area table {
-    width:100%; border-collapse:collapse; font-size:14px;
-  }
-  .report-area table th, .report-area table td {
-    border:1px solid #000; padding:8px 6px; text-align:center;
-  }
-  .report-area table th {
-    background:#f0f0f0; font-weight:bold;
-  }
+  .report-area table { width:100%; border-collapse:collapse; font-size:13px; }
+  .report-area table th, .report-area table td { border:1px solid #000; padding:6px 4px; text-align:center; }
+  .report-area table th { background:#f0f0f0; font-weight:bold; }
   .report-area table .col-input { background:#FFF8E1; }
   .report-area table .col-output { background:#E8F5E9; }
-  .report-area .r-leftcol {
-    background:#f5f5f5; font-weight:bold; vertical-align:middle;
-    writing-mode:vertical-rl; text-orientation:upright;
-    letter-spacing:5px; padding:8px;
-  }
+  .report-area .r-leftcol { background:#f5f5f5; font-weight:bold; vertical-align:middle; writing-mode:vertical-rl; text-orientation:upright; letter-spacing:5px; padding:8px; }
 </style>
 </head>
 <body>
@@ -221,7 +210,6 @@
 
 <div class="container">
 
-  <!-- 공유 버튼 (작업 날짜 위) -->
   <button class="btn btn-share" onclick="shareAsImage()">📤 일일마감일지 카톡으로 공유</button>
 
   <div class="box">
@@ -234,7 +222,6 @@
   <div class="box" style="margin-top:14px;">
     <label class="block">📋 선택 날짜의 생산 목록</label>
     
-    <!-- 정렬 필터 -->
     <div class="filter-bar">
       <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">전체</button>
       <button class="filter-btn" data-filter="yuk" onclick="setFilter('yuk', this)">육절기</button>
@@ -248,7 +235,6 @@
 
 </div>
 
-<!-- 숨겨진 일일마감일지 캡처 영역 -->
 <div id="reportArea" class="report-area"></div>
 
 <!-- 부족 재고 자동 팝업 -->
@@ -266,7 +252,7 @@
   </div>
 </div>
 
-<!-- 일지 종류 선택 팝업 -->
+<!-- 일지 선택 팝업 -->
 <div id="shareSelectModal" class="modal-overlay">
   <div class="modal-content" style="max-width:420px;">
     <div class="modal-header">
@@ -317,73 +303,57 @@
       <hr style="margin:14px 0; border:0; border-top:2px dashed #ddd;">
       <div style="font-size:15px; font-weight:bold; color:#FF9800; margin-bottom:6px;">📥 투입</div>
       
-      <label class="block">투입 상품명 *</label>
-      <div class="ac-wrap">
-        <input type="text" id="p_inputProduct" placeholder="3글자 이상 입력 시 검색" autocomplete="off" data-pac="inputProducts">
-        <div class="ac-list" id="pac_inputProducts"></div>
-      </div>
-      
-      <label class="block">이력 식별번호</label>
-      <div style="display:flex; gap:6px;">
-        <input type="text" id="p_barcode" placeholder="바코드 스캔/입력" inputmode="numeric">
-        <button class="btn btn-camera btn-small" onclick="startBarcodeForInput()">📷</button>
-      </div>
-      
-      <!-- ★ 바코드 스캔 영역 (그리드 가이드 + 토치 + 줌) -->
-      <div id="scanWrap" class="scan-wrap">
-        <div id="reader2"></div>
-        <div class="scan-guide"></div>
-        <div class="scan-hint">📷 초록 박스 안에 바코드를 맞추세요 (바코드와 10~15cm 거리)</div>
-        <div class="scan-ctrl">
-          <button class="scan-ctrl-btn" id="torchBtn" onclick="toggleTorch()">🔦 플래시</button>
-          <button class="scan-ctrl-btn" id="zoomBtn" onclick="toggleZoom()">🔍 확대</button>
-          <button class="scan-ctrl-btn" id="focusBtn" onclick="forceFocus()">🎯 초점</button>
-        </div>
-      </div>
-      <button id="stopBarcodeBtn" class="btn btn-stop" style="margin-top:6px;" onclick="stopBarcodeForInput()">바코드 스캔 중지</button>
-      
-      <label class="block">투입 박스수 / 투입 중량</label>
-      <button class="btn btn-calc" onclick="openCalculator('input')">🧮 계산기 (투입용)</button>
-      <div class="grid2" style="margin-top:8px;">
-        <input type="number" id="p_inputBoxCount" placeholder="투입 박스 수" step="1">
-        <input type="number" id="p_inputWeight" placeholder="투입 중량(kg)" step="0.01">
-      </div>
+      <div id="inputCards"></div>
+      <button type="button" class="btn-add-card" onclick="addInputCard()">➕ 투입 추가</button>
+      <div id="inputSummary" class="io-summary" style="display:none; margin-top:8px;"></div>
       
       <hr style="margin:14px 0; border:0; border-top:2px dashed #ddd;">
       <div style="font-size:15px; font-weight:bold; color:#2E7D32; margin-bottom:6px;">📤 생산</div>
       
-      <label class="block">생산 상품명</label>
-      <div class="ac-wrap">
-        <input type="text" id="p_outputProduct" placeholder="비워두면 투입과 동일" autocomplete="off" data-pac="outputProducts">
-        <div class="ac-list" id="pac_outputProducts"></div>
-      </div>
+      <div id="outputCards"></div>
+      <button type="button" class="btn-add-card" onclick="addOutputCard()">➕ 생산 추가</button>
+      <div id="outputSummary" class="io-summary output" style="display:none; margin-top:8px;"></div>
+      <div id="yieldDisplay" class="hint" style="font-size:14px; font-weight:bold; color:#2E7D32; padding:6px 0; text-align:center;"></div>
       
-      <label class="block">생산 박스수 / 생산 중량</label>
-      <button class="btn btn-calc" onclick="openCalculator('output')">🧮 계산기 (생산용)</button>
-      <div class="grid2" style="margin-top:8px;">
-        <input type="number" id="p_outputBoxCount" placeholder="생산 박스 수" step="1">
-        <input type="number" id="p_outputWeight" placeholder="생산 중량(kg)" step="0.01">
-      </div>
-      <div id="yieldDisplay" class="hint" style="font-size:14px; font-weight:bold; color:#2E7D32; padding:6px 0;"></div>
-      
-      <label class="block">메모 / 기타</label>
+      <hr style="margin:14px 0; border:0; border-top:2px dashed #ddd;">
+      <label class="block">메모 / 기타 (세트 공통)</label>
       <textarea id="p_memo" placeholder="국거리 4묶음, 양프로, 미스다, 작업보류 등"></textarea>
       
       <div id="status2"></div>
       
-      <button class="btn btn-save" onclick="saveInput()" id="saveBtn">💾 저장</button>
-      <button class="btn btn-delete" id="deleteBtn" style="display:none;" onclick="deleteCurrentItem()">🗑️ 이 항목 삭제</button>
+      <button class="btn btn-save" onclick="saveSet()" id="saveBtn">💾 저장</button>
+      <button class="btn btn-delete" id="deleteBtn" style="display:none;" onclick="deleteCurrentSet()">🗑️ 이 세트 전체 삭제</button>
     </div>
   </div>
 </div>
 
-<!-- 계산기 모달 -->
+<!-- 바코드 스캐너 모달 (별도) -->
+<div id="scanModal" class="modal-overlay" style="z-index:300;">
+  <div class="modal-content" style="max-width:560px;">
+    <div class="modal-header">
+      <span class="title">📷 이력 바코드 스캔</span>
+      <button class="modal-close" onclick="stopBarcodeForInput()">✕ 닫기</button>
+    </div>
+    <div id="scanWrap" class="scan-wrap show">
+      <div id="reader2"></div>
+      <div class="scan-guide"></div>
+      <div class="scan-hint">📷 초록 박스 안에 바코드를 맞추세요 (10~15cm 거리)</div>
+      <div class="scan-ctrl">
+        <button class="scan-ctrl-btn" id="torchBtn" onclick="toggleTorch()">🔦 플래시</button>
+        <button class="scan-ctrl-btn" id="zoomBtn" onclick="toggleZoom()">🔍 확대</button>
+        <button class="scan-ctrl-btn" id="focusBtn" onclick="forceFocus()">🎯 초점</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 계산기 -->
 <div id="calcModal" class="calc-modal">
   <div class="calc-header">
     <span class="title">🧮 중량 계산기</span>
     <button class="calc-close" onclick="closeCalculator()">닫기 ✕</button>
   </div>
-  <div class="calc-target" id="calcTarget">투입 박스/중량 칸으로 전송됩니다</div>
+  <div class="calc-target" id="calcTarget">박스/중량 칸으로 전송됩니다</div>
   <div class="calc-paper" id="calcPaper"></div>
   <div class="calc-display" id="calcDisplay">0</div>
   <div class="calc-keypad">
@@ -424,11 +394,17 @@
   const API_URL = "https://script.google.com/macros/s/AKfycbxbhb1tD_9zJslhTS7MInKo0t5F5VfwOJwM0hXFP6CkufQsstmVgFicBOpjV86NXz9i/exec";
 
   let html5QrCode2 = null;
-  let editingRowNum = null;
-  let calcTargetField = 'input';
+  let editingSetId = null;
   let currentItems = [];
   let currentFilter = 'all';
   const savedWorker = localStorage.getItem('shinhwa_worker') || '';
+  
+  // 카드 ID 카운터
+  let cardCounter = 0;
+  // 계산기 대상 (어떤 카드/필드로 전송할지)
+  let calcTargetCard = null; // {type:'input'|'output', cardId, mode:'box+weight'}
+  // 바코드 스캔 대상
+  let scanTargetCardId = null;
 
   (function initDate(){
     const t = new Date();
@@ -444,67 +420,297 @@
   function hideStatus2(){ document.getElementById('status2').style.display='none'; }
   function escapeHtml(s){ if (s==null) return ''; return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+  // ============ 모달 열기 ============
   function openAddModal(){
-    editingRowNum = null;
-    clearForm();
-    if (savedWorker) document.getElementById('p_writer').value = savedWorker;
+    editingSetId = null;
+    document.getElementById('p_writer').value = savedWorker || '';
+    document.getElementById('p_memo').value = '';
+    document.querySelector('input[name="machine"][value="육절기"]').checked = true;
+    document.querySelector('input[name="timeSlot"][value="오전"]').checked = true;
+    
+    // 카드 초기화 (투입 1개, 생산 1개로 시작)
+    document.getElementById('inputCards').innerHTML = '';
+    document.getElementById('outputCards').innerHTML = '';
+    cardCounter = 0;
+    addInputCard();
+    addOutputCard();
+    
     document.getElementById('modalTitle').innerText = "➕ 새 생산 등록";
     document.getElementById('deleteBtn').style.display = 'none';
     document.getElementById('inputModal').classList.add('active');
     hideStatus2();
-    updateYieldDisplay();
+    updateSummary();
   }
-  function openEditModal(item){
-    editingRowNum = item.rowNum;
-    clearForm();
-    document.getElementById('p_writer').value = item.writer || '';
-    document.getElementById('p_inputProduct').value = item.inputProduct || '';
-    document.getElementById('p_barcode').value = item.barcode || '';
-    document.getElementById('p_inputBoxCount').value = item.inputBoxCount || '';
-    document.getElementById('p_inputWeight').value = item.inputWeight || '';
-    document.getElementById('p_outputProduct').value = item.outputProduct || '';
-    document.getElementById('p_outputBoxCount').value = item.outputBoxCount || '';
-    document.getElementById('p_outputWeight').value = item.outputWeight || '';
-    document.getElementById('p_memo').value = item.memo || '';
-    const m = item.machine || '육절기';
+  
+  function openEditModal(setItem){
+    editingSetId = setItem.setId;
+    document.getElementById('p_writer').value = setItem.writer || '';
+    document.getElementById('p_memo').value = setItem.memo || '';
+    const m = setItem.machine || '육절기';
     const mradio = document.querySelector('input[name="machine"][value="'+m+'"]');
     if (mradio) mradio.checked = true;
-    const t = item.timeSlot || '오전';
+    const t = setItem.timeSlot || '오전';
     const tradio = document.querySelector('input[name="timeSlot"][value="'+t+'"]');
     if (tradio) tradio.checked = true;
+    
+    // 카드 초기화 후 세트의 투입/생산 데이터로 다시 채움
+    document.getElementById('inputCards').innerHTML = '';
+    document.getElementById('outputCards').innerHTML = '';
+    cardCounter = 0;
+    
+    const inputs = setItem.inputs && setItem.inputs.length > 0 ? setItem.inputs : [{}];
+    inputs.forEach(inp => addInputCard(inp));
+    
+    const outputs = setItem.outputs && setItem.outputs.length > 0 ? setItem.outputs : [{}];
+    outputs.forEach(out => addOutputCard(out));
+    
     document.getElementById('modalTitle').innerText = "✏️ 생산 수정";
     document.getElementById('deleteBtn').style.display = 'block';
     document.getElementById('inputModal').classList.add('active');
     hideStatus2();
-    updateYieldDisplay();
-  }
-  function closeModal(){
-    document.getElementById('inputModal').classList.remove('active');
-    editingRowNum = null;
-  }
-  function clearForm(){
-    ['p_writer','p_inputProduct','p_barcode','p_inputBoxCount','p_inputWeight','p_outputProduct','p_outputBoxCount','p_outputWeight','p_memo'].forEach(id=>{
-      document.getElementById(id).value = '';
-    });
-    document.querySelector('input[name="machine"][value="육절기"]').checked = true;
-    document.querySelector('input[name="timeSlot"][value="오전"]').checked = true;
+    updateSummary();
   }
   
-  function updateYieldDisplay(){
-    const iw = parseFloat(document.getElementById('p_inputWeight').value) || 0;
-    const ow = parseFloat(document.getElementById('p_outputWeight').value) || 0;
-    const display = document.getElementById('yieldDisplay');
-    if (iw > 0 && ow > 0) {
-      const pct = (ow / iw * 100).toFixed(2);
-      display.innerText = `수율: ${pct}%`;
-      display.style.color = pct >= 95 ? '#2E7D32' : (pct >= 85 ? '#FF9800' : '#E53935');
+  function closeModal(){
+    document.getElementById('inputModal').classList.remove('active');
+    editingSetId = null;
+  }
+
+  // ============ 투입 카드 동적 추가 ============
+  function addInputCard(data){
+    cardCounter++;
+    const cardId = 'inp_' + cardCounter;
+    const d = data || {};
+    
+    const card = document.createElement('div');
+    card.className = 'io-card input-card';
+    card.id = cardId;
+    card.innerHTML = `
+      <div class="io-card-header">
+        <span class="io-card-title input">📥 투입 <span class="input-num"></span></span>
+        <button type="button" class="io-card-del" onclick="removeCard('${cardId}', 'input')">✕ 삭제</button>
+      </div>
+      <label class="block">상품명 *</label>
+      <div class="ac-wrap">
+        <input type="text" class="inp-product" placeholder="3글자 이상 입력 시 검색" autocomplete="off" data-pac="inputProducts" value="${escapeHtml(d.product||'')}">
+        <div class="ac-list"></div>
+      </div>
+      <label class="block">이력 식별번호</label>
+      <div style="display:flex; gap:6px;">
+        <input type="text" class="inp-barcode" placeholder="바코드 스캔/입력" inputmode="numeric" value="${escapeHtml(d.barcode||'')}">
+        <button type="button" class="btn btn-camera btn-small" onclick="startBarcodeForInput('${cardId}')">📷</button>
+      </div>
+      <label class="block">박스수 / 중량</label>
+      <button type="button" class="btn btn-calc" onclick="openCalculator('input', '${cardId}')">🧮 계산기</button>
+      <div class="grid2" style="margin-top:8px;">
+        <input type="number" class="inp-box" placeholder="박스 수" step="1" value="${d.boxCount||''}">
+        <input type="number" class="inp-weight" placeholder="중량(kg)" step="0.01" value="${d.weight||''}">
+      </div>
+    `;
+    document.getElementById('inputCards').appendChild(card);
+    
+    // 자동완성 설정
+    setupAutocompleteForCard(card);
+    
+    // 입력 시 합계 업데이트
+    card.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', updateSummary);
+    });
+    
+    renumberCards();
+  }
+  
+  function addOutputCard(data){
+    cardCounter++;
+    const cardId = 'out_' + cardCounter;
+    const d = data || {};
+    
+    const card = document.createElement('div');
+    card.className = 'io-card output-card';
+    card.id = cardId;
+    card.innerHTML = `
+      <div class="io-card-header">
+        <span class="io-card-title output">📤 생산 <span class="output-num"></span></span>
+        <button type="button" class="io-card-del" onclick="removeCard('${cardId}', 'output')">✕ 삭제</button>
+      </div>
+      <label class="block">상품명</label>
+      <div class="ac-wrap">
+        <input type="text" class="out-product" placeholder="비워두면 투입과 동일" autocomplete="off" data-pac="outputProducts" value="${escapeHtml(d.product||'')}">
+        <div class="ac-list"></div>
+      </div>
+      <label class="block">박스수 / 중량</label>
+      <button type="button" class="btn btn-calc" onclick="openCalculator('output', '${cardId}')">🧮 계산기</button>
+      <div class="grid2" style="margin-top:8px;">
+        <input type="number" class="out-box" placeholder="박스 수" step="1" value="${d.boxCount||''}">
+        <input type="number" class="out-weight" placeholder="중량(kg)" step="0.01" value="${d.weight||''}">
+      </div>
+    `;
+    document.getElementById('outputCards').appendChild(card);
+    
+    setupAutocompleteForCard(card);
+    card.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', updateSummary);
+    });
+    
+    renumberCards();
+  }
+  
+  function removeCard(cardId, type){
+    const totalCards = document.querySelectorAll(type === 'input' ? '#inputCards .io-card' : '#outputCards .io-card').length;
+    if (totalCards <= 1) {
+      alert((type === 'input' ? '투입' : '생산') + '은 최소 1개 이상이어야 합니다.');
+      return;
+    }
+    const el = document.getElementById(cardId);
+    if (el) el.remove();
+    renumberCards();
+    updateSummary();
+  }
+  
+  function renumberCards(){
+    document.querySelectorAll('#inputCards .input-num').forEach((el, idx) => {
+      el.innerText = '#' + (idx + 1);
+    });
+    document.querySelectorAll('#outputCards .output-num').forEach((el, idx) => {
+      el.innerText = '#' + (idx + 1);
+    });
+  }
+  
+  // ============ 합계 + 수율 ============
+  function updateSummary(){
+    let inputBox = 0, inputW = 0;
+    document.querySelectorAll('#inputCards .io-card').forEach(c => {
+      const b = parseFloat(c.querySelector('.inp-box').value) || 0;
+      const w = parseFloat(c.querySelector('.inp-weight').value) || 0;
+      inputBox += b;
+      inputW += w;
+    });
+    let outputBox = 0, outputW = 0;
+    document.querySelectorAll('#outputCards .io-card').forEach(c => {
+      const b = parseFloat(c.querySelector('.out-box').value) || 0;
+      const w = parseFloat(c.querySelector('.out-weight').value) || 0;
+      outputBox += b;
+      outputW += w;
+    });
+    
+    const inSum = document.getElementById('inputSummary');
+    if (inputBox > 0 || inputW > 0) {
+      inSum.innerText = `📥 투입 합계: ${inputBox}박 / ${inputW.toFixed(2)}kg`;
+      inSum.style.display = 'block';
     } else {
-      display.innerText = '';
+      inSum.style.display = 'none';
+    }
+    
+    const outSum = document.getElementById('outputSummary');
+    if (outputBox > 0 || outputW > 0) {
+      outSum.innerText = `📤 생산 합계: ${outputBox}박 / ${outputW.toFixed(2)}kg`;
+      outSum.style.display = 'block';
+    } else {
+      outSum.style.display = 'none';
+    }
+    
+    const yd = document.getElementById('yieldDisplay');
+    if (inputW > 0 && outputW > 0) {
+      const pct = (outputW / inputW * 100).toFixed(2);
+      yd.innerText = `종합 수율: ${pct}%`;
+      yd.style.color = pct >= 95 ? '#2E7D32' : (pct >= 85 ? '#FF9800' : '#E53935');
+    } else {
+      yd.innerText = '';
     }
   }
-  ['p_inputWeight','p_outputWeight'].forEach(id=>{
-    document.getElementById(id).addEventListener('input', updateYieldDisplay);
-  });
+
+  // ============ 저장 ============
+  async function saveSet(){
+    // 카드들에서 데이터 수집
+    const inputs = [];
+    document.querySelectorAll('#inputCards .io-card').forEach(c => {
+      const product = c.querySelector('.inp-product').value.trim();
+      const barcode = c.querySelector('.inp-barcode').value.trim();
+      const boxCount = c.querySelector('.inp-box').value.trim();
+      const weight = c.querySelector('.inp-weight').value.trim();
+      // 빈 카드는 무시
+      if (product || barcode || boxCount || weight) {
+        inputs.push({ product, barcode, boxCount, weight });
+      }
+    });
+    
+    if (inputs.length === 0 || !inputs[0].product) {
+      showStatus2("🚨 투입 상품명은 최소 1개 필요합니다.", 'error');
+      return;
+    }
+    
+    const outputs = [];
+    document.querySelectorAll('#outputCards .io-card').forEach(c => {
+      let product = c.querySelector('.out-product').value.trim();
+      const boxCount = c.querySelector('.out-box').value.trim();
+      const weight = c.querySelector('.out-weight').value.trim();
+      if (product || boxCount || weight) {
+        // 생산 상품명 비어있고 한 개만 있으면 첫 투입 상품명으로
+        if (!product && outputs.length === 0 && inputs.length > 0) {
+          product = inputs[0].product;
+        }
+        outputs.push({ product, boxCount, weight });
+      }
+    });
+    
+    const payload = {
+      targetDate: document.getElementById('targetDate').value,
+      writer: document.getElementById('p_writer').value.trim(),
+      machine: document.querySelector('input[name="machine"]:checked').value,
+      timeSlot: document.querySelector('input[name="timeSlot"]:checked').value,
+      memo: document.getElementById('p_memo').value.trim(),
+      inputs: inputs,
+      outputs: outputs
+    };
+    
+    if (editingSetId) {
+      payload.action = "updateProductionSet";
+      payload.setId = editingSetId;
+    } else {
+      payload.action = "productionSet";
+    }
+    
+    showStatus2("⏳ 저장 중...", 'processing');
+    try {
+      const res = await fetch(API_URL, { method:"POST", body:JSON.stringify(payload) });
+      const data = await res.json();
+      if (data.status === 'success') {
+        vibratePattern(true);
+        playBeep(false);
+        showStatus2("✅ " + data.msg, 'success');
+        setTimeout(()=>{ closeModal(); loadList(); loadAutoComplete(); }, 800);
+      } else {
+        vibratePattern(false);
+        playBeep(true);
+        showStatus2("🚨 " + data.msg, 'error');
+      }
+    } catch(err){
+      vibratePattern(false);
+      playBeep(true);
+      showStatus2("❌ 통신 오류: " + err.message, 'error');
+    }
+  }
+  
+  async function deleteCurrentSet(){
+    if (!editingSetId) return;
+    if (!confirm("이 세트 전체를 삭제하시겠습니까?\n(투입/생산 모든 행이 삭제됩니다)")) return;
+    showStatus2("⏳ 삭제 중...", 'processing');
+    try {
+      const res = await fetch(API_URL, { method:"POST", body:JSON.stringify({ action:"deleteProductionSet", setId:editingSetId }) });
+      const data = await res.json();
+      if (data.status === 'success') {
+        playBeep(false);
+        showStatus2("✅ " + data.msg, 'success');
+        setTimeout(()=>{ closeModal(); loadList(); }, 600);
+      } else {
+        playBeep(true);
+        showStatus2("🚨 " + data.msg, 'error');
+      }
+    } catch(err){
+      playBeep(true);
+      showStatus2("❌ 통신 오류: " + err.message, 'error');
+    }
+  }
 
   // ============ 목록 로드 ============
   async function loadList(){
@@ -543,7 +749,7 @@
     const filtered = filterItems(currentItems);
     
     if (filtered.length === 0) {
-      area.innerHTML = '<div class="empty-msg">선택한 조건에 해당하는 생산 내역이 없습니다.<br>위 "➕ 새 생산 등록" 버튼을 눌러 등록하세요.</div>';
+      area.innerHTML = '<div class="empty-msg">선택한 조건에 해당하는 생산 내역이 없습니다.</div>';
       return;
     }
     
@@ -553,50 +759,75 @@
     html += '<thead><tr>';
     html += '<th class="col-num">#</th>';
     html += '<th>구분</th>';
-    html += '<th>품목</th>';
-    html += '<th>투입(박스/kg)</th>';
-    html += '<th>생산(박스/kg)</th>';
+    html += '<th>품목 (투입→생산)</th>';
+    html += '<th>투입</th>';
+    html += '<th>생산</th>';
     html += '<th>수율</th>';
-    html += '<th>메모</th>';
     html += '<th>편집</th>';
     html += '</tr></thead><tbody>';
     
-    filtered.forEach((item, idx) => {
+    filtered.forEach((set, idx) => {
       const num = idx + 1;
-      const mTag = item.machine === '골절기' 
+      const mTag = set.machine === '골절기' 
         ? '<span class="tag tag-gol">골</span>' 
         : '<span class="tag tag-yuk">육</span>';
-      const tTag = item.timeSlot === '오후' 
+      const tTag = set.timeSlot === '오후' 
         ? '<span class="tag tag-pm">PM</span>' 
         : '<span class="tag tag-am">AM</span>';
       
-      const inBox = item.inputBoxCount || '-';
-      const inW = item.inputWeight ? Number(item.inputWeight).toFixed(2) : '-';
-      const outBox = item.outputBoxCount || '-';
-      const outW = item.outputWeight ? Number(item.outputWeight).toFixed(2) : '-';
+      // 투입 요약
+      let inpBox = 0, inpW = 0;
+      set.inputs.forEach(i => {
+        inpBox += Number(i.boxCount) || 0;
+        inpW += Number(i.weight) || 0;
+      });
+      let outBox = 0, outW = 0;
+      set.outputs.forEach(o => {
+        outBox += Number(o.boxCount) || 0;
+        outW += Number(o.weight) || 0;
+      });
       
-      const yieldNum = item.yieldPct ? Number(item.yieldPct) : null;
+      totalInputW += inpW;
+      totalOutputW += outW;
+      
+      const inpStr = `${inpBox || '-'}박 / ${inpW.toFixed(2)}kg`;
+      const outStr = `${outBox || '-'}박 / ${outW.toFixed(2)}kg`;
+      
+      // 품목 요약
+      const inpProducts = [...new Set(set.inputs.map(i => i.product).filter(Boolean))];
+      const outProducts = [...new Set(set.outputs.map(o => o.product).filter(Boolean))];
+      let productHtml = inpProducts.join(', ');
+      if (outProducts.length > 0 && outProducts.join(',') !== inpProducts.join(',')) {
+        productHtml += '<br><small style="color:#666;">→ ' + outProducts.join(', ') + '</small>';
+      }
+      
+      const multiTag = (set.inputs.length > 1 || set.outputs.length > 1) 
+        ? ' <span class="tag-multi">SET' + (set.inputs.length + '+' + set.outputs.length) + '</span>' 
+        : '';
+      
+      const yieldNum = set.yieldPct ? Number(set.yieldPct) : null;
       const yieldStr = yieldNum !== null ? yieldNum.toFixed(1) + '%' : '-';
       const yieldClass = yieldNum !== null ? (yieldNum >= 95 ? 'good' : (yieldNum < 85 ? 'low' : '')) : '';
       
-      if (item.inputWeight) totalInputW += Number(item.inputWeight);
-      if (item.outputWeight) totalOutputW += Number(item.outputWeight);
-      
       html += '<tr>';
       html += `<td class="col-num">${num}</td>`;
-      html += `<td>${mTag} ${tTag}</td>`;
-      html += `<td class="col-product">${escapeHtml(item.inputProduct)}${item.outputProduct && item.outputProduct !== item.inputProduct ? '<br><small style="color:#666;">→' + escapeHtml(item.outputProduct) + '</small>' : ''}</td>`;
-      html += `<td>${inBox}박 / ${inW}kg</td>`;
-      html += `<td>${outBox}박 / ${outW}kg</td>`;
+      html += `<td>${mTag} ${tTag}${multiTag}</td>`;
+      html += `<td class="col-product">${productHtml}</td>`;
+      html += `<td>${inpStr}</td>`;
+      html += `<td>${outStr}</td>`;
       html += `<td class="col-yield ${yieldClass}">${yieldStr}</td>`;
-      html += `<td style="font-size:11px; max-width:80px; text-align:left;">${escapeHtml(item.memo || '')}</td>`;
-      html += `<td><button class="btn btn-edit" onclick='editItemBtn(${JSON.stringify(item).replace(/'/g,"&#39;")})'>✏️</button></td>`;
+      html += `<td><button class="btn btn-edit" onclick='editItemBtn(${JSON.stringify(set).replace(/'/g,"&#39;")})'>✏️</button></td>`;
       html += '</tr>';
+      
+      // 메모 있으면 추가 행
+      if (set.memo) {
+        html += `<tr style="background:#FFF9C4;"><td colspan="7" style="text-align:left; padding:6px 10px; font-size:11px; color:#5D4037;">💬 ${escapeHtml(set.memo)}</td></tr>`;
+      }
     });
     
     html += '</tbody></table>';
     
-    html += `<div class="summary">📊 합계: ${filtered.length}건 · 투입 ${totalInputW.toFixed(2)}kg · 생산 ${totalOutputW.toFixed(2)}kg`;
+    html += `<div class="summary">📊 합계: ${filtered.length}세트 · 투입 ${totalInputW.toFixed(2)}kg · 생산 ${totalOutputW.toFixed(2)}kg`;
     if (totalInputW > 0) {
       const totalYield = (totalOutputW / totalInputW * 100).toFixed(2);
       html += ` · 종합수율 <b>${totalYield}%</b>`;
@@ -605,101 +836,24 @@
     
     area.innerHTML = html;
   }
-  function editItemBtn(item){ openEditModal(item); }
+  function editItemBtn(set){ openEditModal(set); }
 
-  // ============ 저장/수정/삭제 ============
-  async function saveInput(){
-    const inputProduct = document.getElementById('p_inputProduct').value.trim();
-    if (!inputProduct) { showStatus2("🚨 투입 상품명은 필수입니다.", 'error'); return; }
-    let outputProduct = document.getElementById('p_outputProduct').value.trim();
-    if (!outputProduct) outputProduct = inputProduct;
-    const payload = {
-      targetDate: document.getElementById('targetDate').value,
-      writer: document.getElementById('p_writer').value.trim(),
-      machine: document.querySelector('input[name="machine"]:checked').value,
-      timeSlot: document.querySelector('input[name="timeSlot"]:checked').value,
-      inputProduct: inputProduct,
-      barcode: document.getElementById('p_barcode').value.trim(),
-      inputBoxCount: document.getElementById('p_inputBoxCount').value.trim(),
-      inputWeight: document.getElementById('p_inputWeight').value.trim(),
-      outputProduct: outputProduct,
-      outputBoxCount: document.getElementById('p_outputBoxCount').value.trim(),
-      outputWeight: document.getElementById('p_outputWeight').value.trim(),
-      memo: document.getElementById('p_memo').value.trim()
-    };
-    if (editingRowNum) {
-      payload.action = "updateProduction";
-      payload.rowNum = editingRowNum;
-    } else {
-      payload.action = "production";
-    }
-    showStatus2("⏳ 저장 중...", 'processing');
-    try {
-      const res = await fetch(API_URL, { method:"POST", body:JSON.stringify(payload) });
-      const data = await res.json();
-      if (data.status === 'success') {
-        vibratePattern(true);
-        playBeep(false);
-        showStatus2("✅ " + data.msg, 'success');
-        setTimeout(()=>{ closeModal(); loadList(); loadAutoComplete(); }, 800);
-      } else {
-        vibratePattern(false);
-        playBeep(true);
-        showStatus2("🚨 " + data.msg, 'error');
-      }
-    } catch(err){
-      vibratePattern(false);
-      playBeep(true);
-      showStatus2("❌ 통신 오류: " + err.message, 'error');
-    }
-  }
+  // ============ 바코드 스캐너 (별도 모달) ============
+  let torchOn = false, zoomLevel = 1, scanTrack = null;
   
-  async function deleteCurrentItem(){
-    if (!editingRowNum) return;
-    if (!confirm("이 생산 내역을 삭제하시겠습니까?")) return;
-    showStatus2("⏳ 삭제 중...", 'processing');
-    try {
-      const res = await fetch(API_URL, { method:"POST", body:JSON.stringify({ action:"deleteProduction", rowNum:editingRowNum }) });
-      const data = await res.json();
-      if (data.status === 'success') {
-        playBeep(false);
-        showStatus2("✅ 삭제됨", 'success');
-        setTimeout(()=>{ closeModal(); loadList(); }, 600);
-      } else {
-        playBeep(true);
-        showStatus2("🚨 " + data.msg, 'error');
-      }
-    } catch(err){
-      playBeep(true);
-      showStatus2("❌ 통신 오류: " + err.message, 'error');
-    }
-  }
-
-  // ============ 이력 바코드 스캐너 (고해상도 + 가이드 + 토치/줌) ============
-  let torchOn = false;
-  let zoomLevel = 1;
-  let scanTrack = null;
-  
-  function startBarcodeForInput(){
-    document.getElementById('scanWrap').classList.add('show');
-    document.getElementById('stopBarcodeBtn').style.display = 'block';
+  function startBarcodeForInput(cardId){
+    scanTargetCardId = cardId;
+    document.getElementById('scanModal').classList.add('active');
     
     if (!html5QrCode2) html5QrCode2 = new Html5Qrcode("reader2");
     
-    // 고해상도 + 연속 자동초점
     const cameraConstraints = {
       facingMode: { ideal: "environment" },
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
+      width: { ideal: 1920 }, height: { ideal: 1080 },
       focusMode: "continuous",
-      advanced: [
-        { focusMode: "continuous" },
-        { exposureMode: "continuous" },
-        { whiteBalanceMode: "continuous" }
-      ]
+      advanced: [{ focusMode: "continuous" }, { exposureMode: "continuous" }, { whiteBalanceMode: "continuous" }]
     };
     
-    // 이력 바코드 전용 좁고 긴 박스
     const scanConfig = {
       fps: 25,
       qrbox: { width: 320, height: 70 },
@@ -708,7 +862,6 @@
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
     
-    // 이력 바코드 포맷만 인식 (속도/정확도 ↑)
     if (typeof Html5QrcodeSupportedFormats !== 'undefined') {
       scanConfig.formatsToSupport = [
         Html5QrcodeSupportedFormats.CODE_128,
@@ -721,11 +874,19 @@
     
     const onDecoded = (decoded) => {
       const cleaned = String(decoded).replace(/[^0-9]/g, '');
-      if (cleaned.length < 8) return; // 너무 짧으면 계속 스캔
+      if (cleaned.length < 8) return;
       
       vibratePattern(true);
       playBeep(false);
-      document.getElementById('p_barcode').value = cleaned;
+      
+      // 대상 카드에 바코드 채우기
+      if (scanTargetCardId) {
+        const card = document.getElementById(scanTargetCardId);
+        if (card) {
+          const barcodeInput = card.querySelector('.inp-barcode');
+          if (barcodeInput) barcodeInput.value = cleaned;
+        }
+      }
       stopBarcodeForInput();
     };
     
@@ -750,34 +911,23 @@
         }
       })
       .catch(err => {
-        console.log("고해상도 실패, 일반 모드로 재시도:", err);
-        html5QrCode2.start(
-          { facingMode: "environment" },
-          { fps: 15, qrbox: { width: 280, height: 80 } },
-          onDecoded
-        ).catch(e => {
-          alert("🚨 카메라 오류: " + e);
-          stopBarcodeForInput();
-        });
+        html5QrCode2.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 280, height: 80 } }, onDecoded)
+          .catch(e => { alert("🚨 카메라 오류: " + e); stopBarcodeForInput(); });
       });
   }
   
   function stopBarcodeForInput(){
     if (html5QrCode2 && html5QrCode2.isScanning) {
       html5QrCode2.stop().then(() => {
-        document.getElementById('scanWrap').classList.remove('show');
-        document.getElementById('stopBarcodeBtn').style.display = 'none';
-        torchOn = false;
-        zoomLevel = 1;
-        scanTrack = null;
+        document.getElementById('scanModal').classList.remove('active');
+        torchOn = false; zoomLevel = 1; scanTrack = null;
         const tb = document.getElementById('torchBtn');
         const zb = document.getElementById('zoomBtn');
         if (tb) tb.classList.remove('active');
         if (zb) { zb.classList.remove('active'); zb.innerText = '🔍 확대'; }
       }).catch(() => {});
     } else {
-      document.getElementById('scanWrap').classList.remove('show');
-      document.getElementById('stopBarcodeBtn').style.display = 'none';
+      document.getElementById('scanModal').classList.remove('active');
     }
   }
   
@@ -792,15 +942,10 @@
       torchOn = !torchOn;
       await scanTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
       const btn = document.getElementById('torchBtn');
-      if (torchOn) btn.classList.add('active');
-      else btn.classList.remove('active');
+      if (torchOn) btn.classList.add('active'); else btn.classList.remove('active');
       vibrate(30);
-    } catch(e) {
-      alert("이 기기는 플래시를 지원하지 않습니다.");
-      torchOn = false;
-    }
+    } catch(e) { alert("플래시 지원 안됨"); torchOn = false; }
   }
-  
   function checkZoomSupport(){
     if (!scanTrack) return;
     const caps = scanTrack.getCapabilities ? scanTrack.getCapabilities() : {};
@@ -810,39 +955,30 @@
     if (!scanTrack) return;
     try {
       const caps = scanTrack.getCapabilities();
-      if (!caps.zoom) { alert("이 기기는 줌을 지원하지 않습니다."); return; }
-      
+      if (!caps.zoom) { alert("줌 지원 안됨"); return; }
       const maxZoom = caps.zoom.max || 3;
       if (zoomLevel === 1) zoomLevel = 2;
       else if (zoomLevel === 2) zoomLevel = Math.min(maxZoom, 3);
       else zoomLevel = 1;
-      
       await scanTrack.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
       const btn = document.getElementById('zoomBtn');
       btn.innerText = zoomLevel === 1 ? '🔍 확대' : '🔍 ' + zoomLevel + 'x';
-      if (zoomLevel > 1) btn.classList.add('active');
-      else btn.classList.remove('active');
+      if (zoomLevel > 1) btn.classList.add('active'); else btn.classList.remove('active');
       vibrate(30);
-    } catch(e) {
-      console.log("줌 실패:", e);
-    }
+    } catch(e) {}
   }
-  
   async function forceFocus(){
     if (!scanTrack) return;
     try {
       await scanTrack.applyConstraints({ advanced: [{ focusMode: "single-shot" }] });
       setTimeout(async () => {
-        try {
-          await scanTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
-        } catch(e){}
+        try { await scanTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } catch(e){}
       }, 500);
       vibrate(30);
-    } catch(e) {
-      console.log("재초점 실패:", e);
-    }
+    } catch(e) {}
   }
 
+  // ============ 자동완성 ============
   const SEED_PRODUCTS = ["우알목심(냉동)","돈목전지","돈삼겹살(칠레산,06-06)","우삼겹양지(SWIFT)","돈삼겹살","돈후지 (냉동)","돈목뼈","살치살 (NB,프라임","우정육(다짐육","돈후지 (다짐육)(돈민","스페어립(곡물)","돈목잡(코네스토가)","돈삼겹살 (냉장","살치살 (EXCEL)","우삼겹양지(EXCEL)","우목뼈","돈지방","돈삼겹살 (BOSLER","돈갈비 (냉동)","안창살","LA갈비(National,NBP)","돈삼겹살(듀록)","우아롱사태","램플랩","돈갈비","돈삼겹살(미박","우볼살(KILCOY)","우설깃 (KILCOY)","주태","탕갈비(IOWA)빽립"];
   
   let pacData = { inputProducts:[...SEED_PRODUCTS], outputProducts:[...SEED_PRODUCTS], writers:[] };
@@ -856,54 +992,65 @@
       pacData.inputProducts = merge(data.inputProducts || [], SEED_PRODUCTS);
       pacData.outputProducts = merge(data.outputProducts || [], SEED_PRODUCTS);
       pacData.writers = data.writers || [];
-      setupAutocomplete();
-    } catch(err){ 
-      console.log("자동완성 로드 실패 (시드만 사용):", err); 
-      setupAutocomplete();
-    }
+      // 작성자 자동완성만 별도 설정 (한 번)
+      setupAutocomplete(document.getElementById('p_writer'), 'writers');
+    } catch(err){ console.log("자동완성 로드 실패:", err); }
   }
-  function setupAutocomplete(){
-    document.querySelectorAll('input[data-pac]').forEach(input => {
-      if (input._acSetup) return;
-      input._acSetup = true;
+  
+  function setupAutocompleteForCard(card){
+    card.querySelectorAll('input[data-pac]').forEach(input => {
       const key = input.dataset.pac;
-      const list = document.getElementById('pac_' + key);
-      if (!list) return;
-      function renderList(query){
-        const q = (query || '').trim();
-        const items = pacData[key] || [];
-        const minChars = (key === 'writers') ? 1 : MIN_CHARS;
-        if (q.length < minChars) { list.classList.remove('show'); return; }
-        const qL = q.toLowerCase();
-        const filtered = items.filter(v => v.toLowerCase().includes(qL)).slice(0, 12);
-        list.innerHTML = '';
-        if (filtered.length === 0) {
-          const h = document.createElement('div'); h.className='ac-hint'; h.textContent='일치 항목 없음 (직접 입력 가능)';
-          list.appendChild(h); list.classList.add('show'); return;
-        }
-        filtered.forEach(v => {
-          const d = document.createElement('div'); d.className='ac-item';
-          const idx = v.toLowerCase().indexOf(qL);
-          if (idx>=0) d.innerHTML = escapeHtml(v.slice(0,idx)) + '<b style="color:#9C27B0;">' + escapeHtml(v.slice(idx,idx+q.length)) + '</b>' + escapeHtml(v.slice(idx+q.length));
-          else d.textContent = v;
-          d.addEventListener('pointerdown', (e)=>{ e.preventDefault(); input.value = v; list.classList.remove('show'); });
-          list.appendChild(d);
-        });
-        list.classList.add('show');
-      }
-      input.addEventListener('focus', ()=> renderList(input.value));
-      input.addEventListener('input', ()=> renderList(input.value));
-      input.addEventListener('blur', ()=> { setTimeout(()=> list.classList.remove('show'), 200); });
+      setupAutocomplete(input, key);
     });
+  }
+  
+  function setupAutocomplete(input, key){
+    if (input._acSetup) return;
+    input._acSetup = true;
+    
+    let list;
+    if (input.id === 'p_writer') {
+      list = document.getElementById('pac_writers');
+    } else {
+      list = input.parentElement.querySelector('.ac-list');
+    }
+    if (!list) return;
+    
+    function renderList(query){
+      const q = (query || '').trim();
+      const items = pacData[key] || [];
+      const minChars = (key === 'writers') ? 1 : MIN_CHARS;
+      if (q.length < minChars) { list.classList.remove('show'); return; }
+      const qL = q.toLowerCase();
+      const filtered = items.filter(v => v.toLowerCase().includes(qL)).slice(0, 12);
+      list.innerHTML = '';
+      if (filtered.length === 0) {
+        const h = document.createElement('div'); h.className='ac-hint'; h.textContent='일치 항목 없음 (직접 입력 가능)';
+        list.appendChild(h); list.classList.add('show'); return;
+      }
+      filtered.forEach(v => {
+        const d = document.createElement('div'); d.className='ac-item';
+        const idx = v.toLowerCase().indexOf(qL);
+        if (idx>=0) d.innerHTML = escapeHtml(v.slice(0,idx)) + '<b style="color:#9C27B0;">' + escapeHtml(v.slice(idx,idx+q.length)) + '</b>' + escapeHtml(v.slice(idx+q.length));
+        else d.textContent = v;
+        d.addEventListener('pointerdown', (e)=>{ e.preventDefault(); input.value = v; list.classList.remove('show'); updateSummary(); });
+        list.appendChild(d);
+      });
+      list.classList.add('show');
+    }
+    input.addEventListener('focus', ()=> renderList(input.value));
+    input.addEventListener('input', ()=> renderList(input.value));
+    input.addEventListener('blur', ()=> { setTimeout(()=> list.classList.remove('show'), 200); });
   }
 
   // ============ 계산기 ============
   let calcInput="", calcTotalSum=0, calcItemCount=0, calcDetailList=[], calcPaperLog="";
   let calcBaseForMultiply=null, calcIsAutoDecimal=false;
-  function openCalculator(target){
-    calcTargetField = target || 'input';
-    document.getElementById('calcTarget').innerText = calcTargetField === 'input' 
-      ? '📥 투입 박스/중량 칸으로 전송됩니다' : '📤 생산 박스/중량 칸으로 전송됩니다';
+  
+  function openCalculator(type, cardId){
+    calcTargetCard = { type, cardId };
+    document.getElementById('calcTarget').innerText = 
+      (type === 'input' ? '📥 투입' : '📤 생산') + ' 카드의 박스/중량 칸으로 전송됩니다';
     calcInput=""; calcTotalSum=0; calcItemCount=0; calcDetailList=[]; calcPaperLog="";
     document.getElementById('calcModal').classList.add('active');
     calcUpdateDisplay(); calcRenderPaper();
@@ -943,16 +1090,17 @@
   function calcTotal(){ vibrate(20); if((calcInput&&calcInput!==".")||calcBaseForMultiply!==null) calcPlus(); calcAddLog("------------------"); calcAddLog(`COUNT : ${calcItemCount}`); calcAddLog(`TOTAL : ${calcFmt(calcTotalSum,2)} ★`); calcAddLog("------------------"); }
   function calcSendBack(){
     if(calcItemCount===0&&calcTotalSum===0){alert("계산된 데이터가 없습니다.");return;}
-    if (calcTargetField === 'input') {
-      document.getElementById('p_inputBoxCount').value = calcItemCount;
-      document.getElementById('p_inputWeight').value = calcTotalSum.toFixed(2);
-    } else {
-      document.getElementById('p_outputBoxCount').value = calcItemCount;
-      document.getElementById('p_outputWeight').value = calcTotalSum.toFixed(2);
+    if (!calcTargetCard) { closeCalculator(); return; }
+    const card = document.getElementById(calcTargetCard.cardId);
+    if (card) {
+      const boxInput = card.querySelector(calcTargetCard.type === 'input' ? '.inp-box' : '.out-box');
+      const weightInput = card.querySelector(calcTargetCard.type === 'input' ? '.inp-weight' : '.out-weight');
+      if (boxInput) boxInput.value = calcItemCount;
+      if (weightInput) weightInput.value = calcTotalSum.toFixed(2);
     }
     closeCalculator();
     playBeep(false);
-    updateYieldDisplay();
+    updateSummary();
   }
 
   // ============ 부족 재고 자동 팝업 ============
@@ -961,7 +1109,6 @@
       const res = await fetch(API_URL + "?action=getUnderStocked");
       const data = await res.json();
       const items = data.items || [];
-      
       if (items.length === 0) return;
       
       const listEl = document.getElementById('underStockList');
@@ -974,59 +1121,35 @@
         </div>`;
       });
       listEl.innerHTML = html;
-      
       document.getElementById('underStockModal').classList.add('active');
-    } catch(err){
-      console.log("부족 재고 조회 실패:", err);
-    }
+    } catch(err){ console.log("부족 재고 조회 실패:", err); }
   }
-  function closeUnderStock(){
-    document.getElementById('underStockModal').classList.remove('active');
-  }
+  function closeUnderStock(){ document.getElementById('underStockModal').classList.remove('active'); }
 
-  // ============ 일일마감일지 JPG 공유 (육절기/골절기 선택) ============
+  // ============ 일일마감일지 JPG 공유 ============
   function shareAsImage(){
-    if (currentItems.length === 0) {
-      alert('등록된 생산 내역이 없습니다. 먼저 등록해주세요.');
-      return;
-    }
-    
+    if (currentItems.length === 0) { alert('등록된 생산 내역이 없습니다.'); return; }
     const yukCount = currentItems.filter(i => i.machine === '육절기').length;
     const golCount = currentItems.filter(i => i.machine === '골절기').length;
-    
     document.getElementById('shareYukCount').innerText = yukCount + '건';
     document.getElementById('shareGolCount').innerText = golCount + '건';
     document.getElementById('shareAllCount').innerText = currentItems.length + '건';
     document.getElementById('shareSelectModal').classList.add('active');
   }
-  
-  function closeShareSelect(){
-    document.getElementById('shareSelectModal').classList.remove('active');
-  }
+  function closeShareSelect(){ document.getElementById('shareSelectModal').classList.remove('active'); }
   
   async function doShare(reportFilter){
     closeShareSelect();
-    
     const reportArea = document.getElementById('reportArea');
     reportArea.innerHTML = buildReportHtml(reportFilter);
-    
     showStatus2('⏳ 일일마감일지 이미지 생성 중...', 'processing');
     
     try {
       await new Promise(r => setTimeout(r, 300));
-      
-      const canvas = await html2canvas(reportArea, {
-        scale: 2,
-        backgroundColor: '#FFFFFF',
-        useCORS: true
-      });
+      const canvas = await html2canvas(reportArea, { scale: 2, backgroundColor: '#FFFFFF', useCORS: true });
       
       canvas.toBlob(async (blob) => {
-        if (!blob) {
-          showStatus2('❌ 이미지 생성 실패', 'error');
-          return;
-        }
-        
+        if (!blob) { showStatus2('❌ 이미지 생성 실패', 'error'); return; }
         const date = document.getElementById('targetDate').value.replace(/-/g,'');
         let fileLabel = '일일마감일지';
         if (reportFilter === 'yuk') fileLabel = '육절기_일일마감일지';
@@ -1036,27 +1159,16 @@
         
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
-            await navigator.share({
-              files: [file],
-              title: '신화미트 일일마감일지',
-              text: `${date} ${fileLabel}`
-            });
+            await navigator.share({ files: [file], title: '신화미트 일일마감일지', text: `${date} ${fileLabel}` });
             showStatus2('✅ 공유 완료!', 'success');
             setTimeout(hideStatus2, 2000);
           } catch(shareErr) {
-            if (shareErr.name !== 'AbortError') {
-              downloadImage(canvas, fileName);
-            } else {
-              hideStatus2();
-            }
+            if (shareErr.name !== 'AbortError') downloadImage(canvas, fileName);
+            else hideStatus2();
           }
-        } else {
-          downloadImage(canvas, fileName);
-        }
+        } else downloadImage(canvas, fileName);
       }, 'image/jpeg', 0.95);
-    } catch(err){
-      showStatus2('❌ 이미지 생성 실패: ' + err.message, 'error');
-    }
+    } catch(err){ showStatus2('❌ 이미지 생성 실패: ' + err.message, 'error'); }
   }
   
   function downloadImage(canvas, fileName){
@@ -1064,94 +1176,107 @@
     link.download = fileName;
     link.href = canvas.toDataURL('image/jpeg', 0.95);
     link.click();
-    showStatus2('✅ 이미지 다운로드 완료!\n갤러리에서 카톡으로 공유하세요', 'success');
+    showStatus2('✅ 다운로드 완료!\n갤러리에서 카톡으로 공유하세요', 'success');
     setTimeout(hideStatus2, 4000);
   }
 
   // ============ 일일마감일지 HTML 만들기 ============
   function buildReportHtml(reportFilter){
     const date = document.getElementById('targetDate').value;
-    
     let filtered = currentItems;
     let machineLabel = '';
-    if (reportFilter === 'yuk') {
-      filtered = currentItems.filter(i => i.machine === '육절기');
-      machineLabel = ' (육절기)';
-    } else if (reportFilter === 'gol') {
-      filtered = currentItems.filter(i => i.machine === '골절기');
-      machineLabel = ' (골절기)';
-    }
+    if (reportFilter === 'yuk') { filtered = currentItems.filter(i => i.machine === '육절기'); machineLabel = ' (육절기)'; }
+    else if (reportFilter === 'gol') { filtered = currentItems.filter(i => i.machine === '골절기'); machineLabel = ' (골절기)'; }
     
     const dateObj = new Date(date);
     const dayKor = ['일','월','화','수','목','금','토'][dateObj.getDay()];
     const dateStr = `${dateObj.getFullYear()}. ${dateObj.getMonth()+1}. ${dateObj.getDate()}. ${dayKor}`;
-    
     const writers = [...new Set(filtered.map(i => i.writer).filter(Boolean))];
     const writerStr = writers.length > 0 ? writers.join(' / ') : '-';
     
     let totalIn = 0, totalOut = 0;
-    
-    const amItems = filtered.filter(i => i.timeSlot === '오전');
-    const pmItems = filtered.filter(i => i.timeSlot === '오후');
+    const amSets = filtered.filter(i => i.timeSlot === '오전');
+    const pmSets = filtered.filter(i => i.timeSlot === '오후');
     
     let rowsHtml = '';
     const showMachineCol = (reportFilter !== 'yuk' && reportFilter !== 'gol');
     
-    function renderSection(items, sectionLabel){
-      if (items.length === 0) return '';
+    function renderSection(sets, sectionLabel){
+      if (sets.length === 0) return '';
+      // 전체 행 수 계산 (rowspan용)
+      let totalRows = 0;
+      sets.forEach(s => { totalRows += Math.max(s.inputs.length, s.outputs.length, 1); });
+      
       let html = '';
-      items.forEach((item, idx) => {
-        const inBox = item.inputBoxCount || '-';
-        const inW = item.inputWeight ? Number(item.inputWeight).toFixed(2) : '-';
-        const outBox = item.outputBoxCount || '-';
-        const outW = item.outputWeight ? Number(item.outputWeight).toFixed(2) : '-';
-        const yieldStr = item.yieldPct ? Number(item.yieldPct).toFixed(2) + '%' : '-';
-        const mLabel = item.machine === '골절기' ? '골' : '육';
+      let firstRowInSection = true;
+      
+      sets.forEach(set => {
+        const rowCount = Math.max(set.inputs.length, set.outputs.length, 1);
+        const inpW = set.inputs.reduce((s,i)=>s+(Number(i.weight)||0), 0);
+        const outW = set.outputs.reduce((s,o)=>s+(Number(o.weight)||0), 0);
+        const yieldStr = inpW > 0 ? (outW/inpW*100).toFixed(2) + '%' : '-';
+        const mLabel = set.machine === '골절기' ? '골' : '육';
+        totalIn += inpW; totalOut += outW;
         
-        if (item.inputWeight) totalIn += Number(item.inputWeight);
-        if (item.outputWeight) totalOut += Number(item.outputWeight);
-        
-        html += '<tr>';
-        if (idx === 0) {
-          html += `<td class="r-leftcol" rowspan="${items.length}">${sectionLabel}</td>`;
+        // 첫 행에 정/부, 기계, 수율, 메모 표시 + rowspan
+        for (let i = 0; i < rowCount; i++) {
+          html += '<tr>';
+          if (firstRowInSection && i === 0) {
+            html += `<td class="r-leftcol" rowspan="${totalRows}">${sectionLabel}</td>`;
+            firstRowInSection = false;
+          }
+          
+          if (showMachineCol) {
+            if (i === 0) html += `<td rowspan="${rowCount}">${mLabel}</td>`;
+          }
+          
+          // 투입 (i번째 행에 해당 투입)
+          const inp = set.inputs[i];
+          if (inp) {
+            html += `<td style="text-align:left; padding-left:8px; font-size:12px;">${escapeHtml(inp.product || '')}${inp.barcode ? '<br><span style="color:#888; font-size:10px;">' + escapeHtml(inp.barcode) + '</span>' : ''}</td>`;
+            html += `<td class="col-input">${inp.boxCount || '-'}박 / ${(Number(inp.weight)||0).toFixed(2)}</td>`;
+          } else {
+            html += `<td></td><td class="col-input"></td>`;
+          }
+          
+          // 생산 (생산 1개 + 행 여러개면 첫 행에 rowspan, 아니면 i번째)
+          const out = set.outputs[i];
+          if (set.outputs.length === 1 && rowCount > 1) {
+            if (i === 0) {
+              html += `<td rowspan="${rowCount}" style="text-align:left; padding-left:8px; font-size:12px;">${escapeHtml(set.outputs[0].product || '')}</td>`;
+              html += `<td class="col-output" rowspan="${rowCount}">${set.outputs[0].boxCount || '-'}박 / ${(Number(set.outputs[0].weight)||0).toFixed(2)}</td>`;
+            }
+          } else if (out) {
+            html += `<td style="text-align:left; padding-left:8px; font-size:12px;">${escapeHtml(out.product || '')}</td>`;
+            html += `<td class="col-output">${out.boxCount || '-'}박 / ${(Number(out.weight)||0).toFixed(2)}</td>`;
+          } else {
+            html += `<td></td><td class="col-output"></td>`;
+          }
+          
+          // 수율 + 메모 (rowspan)
+          if (i === 0) {
+            html += `<td rowspan="${rowCount}"><b>${yieldStr}</b></td>`;
+            html += `<td rowspan="${rowCount}" style="text-align:left; font-size:11px; padding:4px;">${escapeHtml(set.memo || '')}</td>`;
+          }
+          
+          html += '</tr>';
         }
-        if (showMachineCol) {
-          html += `<td>${mLabel}</td>`;
-        }
-        html += `<td style="text-align:left; padding-left:10px;">${escapeHtml(item.inputProduct)}${item.outputProduct && item.outputProduct !== item.inputProduct ? ' → ' + escapeHtml(item.outputProduct) : ''}</td>`;
-        html += `<td class="col-input">${inBox}박 / ${inW}</td>`;
-        html += `<td class="col-output">${outBox}박 / ${outW}</td>`;
-        html += `<td><b>${yieldStr}</b></td>`;
-        html += `<td style="text-align:left; font-size:12px;">${escapeHtml(item.memo || '')}</td>`;
-        html += '</tr>';
       });
       return html;
     }
     
-    rowsHtml += renderSection(amItems, '오전');
-    rowsHtml += renderSection(pmItems, '오후');
+    rowsHtml += renderSection(amSets, '오전');
+    rowsHtml += renderSection(pmSets, '오후');
     
     const colspanForEmpty = showMachineCol ? 7 : 6;
-    if (rowsHtml === '') {
-      rowsHtml = `<tr><td colspan="${colspanForEmpty}" style="padding:20px; color:#999;">등록된 생산 내역이 없습니다.</td></tr>`;
-    }
+    if (rowsHtml === '') rowsHtml = `<tr><td colspan="${colspanForEmpty}" style="padding:20px; color:#999;">등록된 생산 내역이 없습니다.</td></tr>`;
     
     const totalYield = totalIn > 0 ? (totalOut / totalIn * 100).toFixed(2) + '%' : '-';
     const totalColspan = showMachineCol ? 3 : 2;
     
-    let headerHtml = `
-      <tr>
-        <th style="width:30px;">구분</th>`;
-    if (showMachineCol) {
-      headerHtml += `<th style="width:40px;">기계</th>`;
-    }
-    headerHtml += `
-        <th>품목</th>
-        <th class="col-input">투입 (박스/kg)</th>
-        <th class="col-output">생산 (박스/kg)</th>
-        <th style="width:60px;">수율</th>
-        <th>기타</th>
-      </tr>`;
+    let headerHtml = `<tr><th style="width:30px;">구분</th>`;
+    if (showMachineCol) headerHtml += `<th style="width:40px;">기계</th>`;
+    headerHtml += `<th>투입 품목/이력</th><th class="col-input">투입(박스/kg)</th><th>생산 품목</th><th class="col-output">생산(박스/kg)</th><th style="width:60px;">수율</th><th>기타</th></tr>`;
     
     return `
       <div class="r-title">일 일 마 감 일 지${machineLabel}</div>
@@ -1166,8 +1291,9 @@
         <tbody>${rowsHtml}</tbody>
         <tfoot>
           <tr style="background:#f5f5f5; font-weight:bold;">
-            <td colspan="${totalColspan}" style="text-align:right; padding-right:10px;">합계</td>
+            <td colspan="${totalColspan + 1}" style="text-align:right; padding-right:10px;">합계</td>
             <td class="col-input">${totalIn.toFixed(2)} kg</td>
+            <td></td>
             <td class="col-output">${totalOut.toFixed(2)} kg</td>
             <td>${totalYield}</td>
             <td></td>
