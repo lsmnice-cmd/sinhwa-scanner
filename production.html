@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>생산 등록</title>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
   * { box-sizing: border-box; }
@@ -108,8 +108,53 @@
   .modal-header .title { font-size:18px; font-weight:bold; color:#333; }
   .modal-close { background:#E53935; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:bold; }
   
-  #reader2 { width:100%; border-radius:10px; overflow:hidden; background:#000; display:none; margin-top:8px; }
-  #reader2 video { width:100% !important; height:200px !important; object-fit:cover !important; }
+  /* ★ 바코드 스캔 영역 개선 */
+  .scan-wrap { position:relative; margin-top:8px; display:none; }
+  .scan-wrap.show { display:block; }
+  #reader2 { width:100%; border-radius:10px; overflow:hidden; background:#000; }
+  #reader2 video { width:100% !important; height:280px !important; object-fit:cover !important; }
+  
+  /* 그리드 가이드 (바코드 정확한 위치 안내) */
+  .scan-guide {
+    position:absolute; top:0; left:0; right:0; bottom:0; 
+    pointer-events:none; border-radius:10px; overflow:hidden;
+  }
+  .scan-guide::before {
+    content:""; position:absolute; top:50%; left:50%; 
+    transform:translate(-50%, -50%);
+    width:90%; height:80px;
+    border:3px solid #4CAF50;
+    box-shadow:0 0 0 9999px rgba(0,0,0,0.45);
+    border-radius:6px;
+  }
+  .scan-guide::after {
+    content:""; position:absolute; top:50%; left:50%;
+    transform:translate(-50%, -50%);
+    width:88%; height:2px;
+    background:#FF0000; opacity:0.7;
+    animation: scanLine 1.6s ease-in-out infinite;
+  }
+  @keyframes scanLine {
+    0%, 100% { transform:translate(-50%, -22px); }
+    50% { transform:translate(-50%, 22px); }
+  }
+  .scan-hint {
+    position:absolute; top:8px; left:0; right:0; text-align:center;
+    color:#fff; font-size:12px; font-weight:bold;
+    text-shadow:0 1px 3px rgba(0,0,0,0.8);
+    z-index:2; pointer-events:none;
+  }
+  .scan-ctrl {
+    position:absolute; bottom:10px; left:0; right:0;
+    display:flex; gap:8px; justify-content:center; padding:0 12px;
+    z-index:3;
+  }
+  .scan-ctrl-btn {
+    background:rgba(0,0,0,0.6); color:#fff; border:1px solid #fff;
+    padding:8px 14px; border-radius:20px; font-size:13px; font-weight:bold;
+    cursor:pointer; backdrop-filter:blur(4px);
+  }
+  .scan-ctrl-btn.active { background:#FFB300; color:#000; }
   
   .calc-modal { display:none; position:fixed; inset:0; background:#263238; z-index:9999; flex-direction:column; }
   .calc-modal.active { display:flex; }
@@ -283,7 +328,18 @@
         <input type="text" id="p_barcode" placeholder="바코드 스캔/입력" inputmode="numeric">
         <button class="btn btn-camera btn-small" onclick="startBarcodeForInput()">📷</button>
       </div>
-      <div id="reader2"></div>
+      
+      <!-- ★ 바코드 스캔 영역 (그리드 가이드 + 토치 + 줌) -->
+      <div id="scanWrap" class="scan-wrap">
+        <div id="reader2"></div>
+        <div class="scan-guide"></div>
+        <div class="scan-hint">📷 초록 박스 안에 바코드를 맞추세요 (바코드와 10~15cm 거리)</div>
+        <div class="scan-ctrl">
+          <button class="scan-ctrl-btn" id="torchBtn" onclick="toggleTorch()">🔦 플래시</button>
+          <button class="scan-ctrl-btn" id="zoomBtn" onclick="toggleZoom()">🔍 확대</button>
+          <button class="scan-ctrl-btn" id="focusBtn" onclick="forceFocus()">🎯 초점</button>
+        </div>
+      </div>
       <button id="stopBarcodeBtn" class="btn btn-stop" style="margin-top:6px;" onclick="stopBarcodeForInput()">바코드 스캔 중지</button>
       
       <label class="block">투입 박스수 / 투입 중량</label>
@@ -464,7 +520,6 @@
     }
   }
 
-  // 정렬 필터
   function setFilter(filter, btn){
     currentFilter = filter;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -483,7 +538,6 @@
     });
   }
 
-  // 표(테이블) 형태로 렌더
   function renderList(){
     const area = document.getElementById('listArea');
     const filtered = filterItems(currentItems);
@@ -621,41 +675,171 @@
     }
   }
 
+  // ============ 이력 바코드 스캐너 (고해상도 + 가이드 + 토치/줌) ============
+  let torchOn = false;
+  let zoomLevel = 1;
+  let scanTrack = null;
+  
   function startBarcodeForInput(){
-    document.getElementById('reader2').style.display = 'block';
+    document.getElementById('scanWrap').classList.add('show');
     document.getElementById('stopBarcodeBtn').style.display = 'block';
+    
     if (!html5QrCode2) html5QrCode2 = new Html5Qrcode("reader2");
+    
+    // 고해상도 + 연속 자동초점
     const cameraConstraints = {
       facingMode: { ideal: "environment" },
-      width: { ideal: 1280 }, height: { ideal: 960 },
-      focusMode: "continuous", advanced: [{ focusMode: "continuous" }]
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      focusMode: "continuous",
+      advanced: [
+        { focusMode: "continuous" },
+        { exposureMode: "continuous" },
+        { whiteBalanceMode: "continuous" }
+      ]
     };
+    
+    // 이력 바코드 전용 좁고 긴 박스
     const scanConfig = {
-      fps: 15, qrbox: { width: 240, height: 100 }, aspectRatio: 1.333,
+      fps: 25,
+      qrbox: { width: 320, height: 70 },
+      aspectRatio: 1.777,
       videoConstraints: cameraConstraints,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
-    const onDecoded = (decoded)=>{
-      vibrate(100);
-      document.getElementById('p_barcode').value = decoded;
+    
+    // 이력 바코드 포맷만 인식 (속도/정확도 ↑)
+    if (typeof Html5QrcodeSupportedFormats !== 'undefined') {
+      scanConfig.formatsToSupport = [
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.ITF
+      ];
+    }
+    
+    const onDecoded = (decoded) => {
+      const cleaned = String(decoded).replace(/[^0-9]/g, '');
+      if (cleaned.length < 8) return; // 너무 짧으면 계속 스캔
+      
+      vibratePattern(true);
       playBeep(false);
+      document.getElementById('p_barcode').value = cleaned;
       stopBarcodeForInput();
     };
+    
     html5QrCode2.start(cameraConstraints, scanConfig, onDecoded)
-      .catch(err=>{
-        html5QrCode2.start({facingMode:"environment"}, {fps:10, qrbox:{width:240,height:100}}, onDecoded)
-          .catch(e=>{ alert("🚨 카메라 오류: " + e); });
+      .then(() => {
+        setTimeout(() => {
+          const videoEl = document.querySelector('#reader2 video');
+          if (videoEl && videoEl.srcObject) {
+            const tracks = videoEl.srcObject.getVideoTracks();
+            if (tracks.length > 0) {
+              scanTrack = tracks[0];
+              checkTorchSupport();
+              checkZoomSupport();
+            }
+          }
+        }, 500);
+        
+        const videoEl = document.querySelector('#reader2 video');
+        if (videoEl) {
+          videoEl.addEventListener('click', forceFocus);
+          videoEl.style.cursor = 'pointer';
+        }
+      })
+      .catch(err => {
+        console.log("고해상도 실패, 일반 모드로 재시도:", err);
+        html5QrCode2.start(
+          { facingMode: "environment" },
+          { fps: 15, qrbox: { width: 280, height: 80 } },
+          onDecoded
+        ).catch(e => {
+          alert("🚨 카메라 오류: " + e);
+          stopBarcodeForInput();
+        });
       });
   }
+  
   function stopBarcodeForInput(){
     if (html5QrCode2 && html5QrCode2.isScanning) {
-      html5QrCode2.stop().then(()=>{
-        document.getElementById('reader2').style.display='none';
-        document.getElementById('stopBarcodeBtn').style.display='none';
-      }).catch(()=>{});
+      html5QrCode2.stop().then(() => {
+        document.getElementById('scanWrap').classList.remove('show');
+        document.getElementById('stopBarcodeBtn').style.display = 'none';
+        torchOn = false;
+        zoomLevel = 1;
+        scanTrack = null;
+        const tb = document.getElementById('torchBtn');
+        const zb = document.getElementById('zoomBtn');
+        if (tb) tb.classList.remove('active');
+        if (zb) { zb.classList.remove('active'); zb.innerText = '🔍 확대'; }
+      }).catch(() => {});
     } else {
-      document.getElementById('reader2').style.display='none';
-      document.getElementById('stopBarcodeBtn').style.display='none';
+      document.getElementById('scanWrap').classList.remove('show');
+      document.getElementById('stopBarcodeBtn').style.display = 'none';
+    }
+  }
+  
+  function checkTorchSupport(){
+    if (!scanTrack) return;
+    const caps = scanTrack.getCapabilities ? scanTrack.getCapabilities() : {};
+    document.getElementById('torchBtn').style.display = caps.torch ? 'inline-block' : 'none';
+  }
+  async function toggleTorch(){
+    if (!scanTrack) return;
+    try {
+      torchOn = !torchOn;
+      await scanTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
+      const btn = document.getElementById('torchBtn');
+      if (torchOn) btn.classList.add('active');
+      else btn.classList.remove('active');
+      vibrate(30);
+    } catch(e) {
+      alert("이 기기는 플래시를 지원하지 않습니다.");
+      torchOn = false;
+    }
+  }
+  
+  function checkZoomSupport(){
+    if (!scanTrack) return;
+    const caps = scanTrack.getCapabilities ? scanTrack.getCapabilities() : {};
+    document.getElementById('zoomBtn').style.display = caps.zoom ? 'inline-block' : 'none';
+  }
+  async function toggleZoom(){
+    if (!scanTrack) return;
+    try {
+      const caps = scanTrack.getCapabilities();
+      if (!caps.zoom) { alert("이 기기는 줌을 지원하지 않습니다."); return; }
+      
+      const maxZoom = caps.zoom.max || 3;
+      if (zoomLevel === 1) zoomLevel = 2;
+      else if (zoomLevel === 2) zoomLevel = Math.min(maxZoom, 3);
+      else zoomLevel = 1;
+      
+      await scanTrack.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
+      const btn = document.getElementById('zoomBtn');
+      btn.innerText = zoomLevel === 1 ? '🔍 확대' : '🔍 ' + zoomLevel + 'x';
+      if (zoomLevel > 1) btn.classList.add('active');
+      else btn.classList.remove('active');
+      vibrate(30);
+    } catch(e) {
+      console.log("줌 실패:", e);
+    }
+  }
+  
+  async function forceFocus(){
+    if (!scanTrack) return;
+    try {
+      await scanTrack.applyConstraints({ advanced: [{ focusMode: "single-shot" }] });
+      setTimeout(async () => {
+        try {
+          await scanTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+        } catch(e){}
+      }, 500);
+      vibrate(30);
+    } catch(e) {
+      console.log("재초점 실패:", e);
     }
   }
 
@@ -778,7 +962,7 @@
       const data = await res.json();
       const items = data.items || [];
       
-      if (items.length === 0) return; // 미달 없으면 팝업 안 띄움
+      if (items.length === 0) return;
       
       const listEl = document.getElementById('underStockList');
       let html = '';
@@ -995,7 +1179,7 @@
 
   loadAutoComplete();
   loadList();
-  loadUnderStocked(); // ★ 페이지 열면 부족 재고 자동 확인
+  loadUnderStocked();
 </script>
 </body>
 </html>
